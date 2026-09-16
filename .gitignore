@@ -7,3 +7,9 @@ public/data/
 .env
 .env.*
 *.log
+
+# Generated Living Sky builds and local verification
+dist-standalone/
+test-results/
+Khushi-Observatory.html
+__pycache__/

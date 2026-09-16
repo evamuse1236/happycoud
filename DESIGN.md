@@ -1,13 +1,9 @@
-# Visual direction
+# Living Sky IV visual direction
 
-The confirmed concept is a constellation of actual comment fragments forming KHUSHI. An ink-blue night, ivory typography and restrained amber, rose and blue accents support the chosen mood. The artifact occupies the first viewport; controls sit around its edges.
+The supplied v4 ZIP is the visual authority for this upgrade. Mode: Experience. Whole comments form KHUSHI and occupy a single immutable field at all distances; camera movement reveals them without switching to a second layout. Mood lighting, a quiet atmospheric background and guided stops support exploration.
 
-First viewport: a large name made of tiny words at the centre, quiet icon controls at the edges, and one compact mood bar with a surprise icon. No introductory copy, counters, decorative phrases, or landing page.
+Tokens from `src/style.css`: ink `#03060c`, panel `#0c1420`, paper `#f1e9d8`, muted text `#a3a9b3`, faint text `#687283`, gold `#ceb48c`, and line `rgba(209,213,226,.13)`. Use the supplied Georgia/Times serif and system sans stacks. Authored SVG symbols provide the interface icons.
 
-Signature interaction: approach the name, reveal complete comments, select a remark, read its original conversation, then return to the same place. Pull back to recognise the name again. Moods send a light wave across matching words while retaining the full silhouette. Motion is slow, bounded, interruptible and never moves focused reading text.
+Preserve the supplied arrival, reading card, library, minimap, saved moments, camera retrace, comfort controls and responsive layouts. Reader text remains HTML with selectable original wording. WebGL and Canvas2D render the same fixed comment geometry. Motion respects reduced-motion preferences, and sound requires explicit opt-in.
 
-The distant silhouette and close reading cloud have separate layouts. Zoom fades between them before letter fragments become large enough to look broken. Each complete comment is wrapped at its natural proportions, packed using its measured bounds with a generous collision margin, and stays level and still. Text is painted at reading resolution across multiple texture pages so an expanding collection cannot overflow one atlas. Emoji retain their colours and detail. Screen-edge fading keeps cropped peripheral comments quiet.
-
-Use self-hosted Bricolage Grotesque for the letter mask, DM Sans for interface and the cloud, and Cormorant Garamond for readable focused quotations. The focused comment sits on a centred warm ivory surface with an author signature, generous whitespace, restrained source/date information, and expandable replies. The surrounding scene dims and softens. Phone uses the same centred reading surface, sized to the viewport.
-
-This session builds the already selected interactive concept directly in code. No new aesthetic selection or generated imagery is necessary to prove the actual 3D interaction.
+This integration adopts the provided design rather than introducing a new visual direction. Product and data boundaries are in PRODUCT.md and README.md.

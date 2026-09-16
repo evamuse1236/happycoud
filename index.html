@@ -1,47 +1,170 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0b1220" />
-  <meta name="description" content="A little constellation of Khushi’s conversations. Look closer, follow a thought, find a familiar voice." />
-  <title>Khushi · A little universe of words</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#03060c">
+  <meta name="description" content="A private constellation made from the words people left. One sky, at every distance.">
+  <title>Khushi — The Living Sky · IV</title>
+  <link rel="stylesheet" href="./src/style.css">
 </head>
-<body>
-  <main id="app">
-    <div id="universe" role="img" aria-label="KHUSHI formed from comments. Use the zoom controls, or Read the words for an accessible list."></div>
-    <header class="header">
-      <button id="brand" class="brand" aria-label="Return to the whole constellation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c0 7-3 10-10 10 7 0 10 3 10 10 0-7 3-10 10-10-7 0-10-3-10-10Z"/></svg></button>
-      <div class="header-actions"><button id="browse" class="icon-button" aria-label="Read all comments"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h11"/></svg></button><button id="motion" class="icon-button" aria-label="Pause motion" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button></div>
-    </header>
-    <div class="invitation"><p id="intro">Look a little closer.</p><span id="counter">Gathering the words…</span></div>
-    <div id="scene-status" role="status" class="scene-status">Gathering your constellation…</div>
-    <button id="home" class="home-control" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m8 0h4v-4"/></svg>KHUSHI</button>
-    <div id="hover-preview" class="hover-preview" hidden><p></p><span></span></div>
-    <div class="bottom-stage">
-      <p id="mood-description" class="mood-description">A name made of little moments.</p>
-      <nav class="moods" aria-label="Explore by mood">
-        <button data-mood="all" class="active" aria-pressed="true">Everything</button>
-        <button data-mood="laugh" aria-pressed="false"><span class="mood-dot amber" aria-hidden="true"></span>Laughter</button>
-        <button data-mood="love" aria-pressed="false"><span class="mood-dot rose" aria-hidden="true"></span>Love</button>
-        <button data-mood="poetry" aria-pressed="false"><span class="mood-dot blue" aria-hidden="true"></span>Poetry</button>
-      </nav>
-      <button id="surprise" class="surprise" aria-label="Surprise me" title="Surprise me" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.6 6.4L21 12l-6.4 2.6L12 21l-2.6-6.4L3 12l6.4-2.6L12 3Z"/></svg></button>
-      <p class="gesture-hint"><span class="desktop-hint">Scroll to look closer · Drag to wander · Click a phrase</span><span class="mobile-hint">Pinch to look closer · Tap a phrase</span></p>
+<body data-paper="true">
+<svg class="symbol-library" aria-hidden="true"><defs>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2c0 7-3 10-10 10 7 0 10 3 10 10 0-7 3-10 10-10-7 0-10-3-10-10Z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M3 6h.1M3 12h.1M3 18h.1"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="16" cy="16" r="2"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4Zm13-1c2 2 2 6 0 8m3-11c4 4 4 10 0 14"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 1 1 4 3c-1 .5-1 1-1 2m0 3h.01"/></symbol>
+  <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="5" cy="17" r="2"/><circle cx="19" cy="5" r="2"/><path d="M7 17h8a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4Z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M15 5V3H3v13h2"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14A9 9 0 0 1 10 3a9 9 0 1 0 10 11Z"/></symbol>
+</defs></svg>
+<div id="app" data-state="empty">
+  <canvas id="universe" tabindex="0" role="img" aria-label="Interactive comment constellation. Scroll or pinch to approach. Drag to explore. Use Browse for a keyboard-accessible version." aria-describedby="sky-help"></canvas>
+  <canvas id="annotations" aria-hidden="true"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+  <header class="topbar">
+    <button id="brand" class="brand" aria-label="Return to the whole constellation">
+      <svg class="brand-star"><use href="#i-star"/></svg>
+      <span><span class="brand-name">Khushi<span class="brand-period">.</span><span class="edition">THE LIVING SKY</span></span><span class="brand-meta" id="collection-label">A CONSTELLATION OF LITTLE MOMENTS</span></span>
+    </button>
+    <nav class="moodbar" id="moods" aria-label="Highlight a mood">
+      <button data-mood="all" aria-pressed="true"><span class="mood-icon">✧</span><span>Everything</span></button>
+      <button data-mood="love" aria-pressed="false"><span class="mood-icon">♡</span><span class="desktop-label">Feeling loved</span><span class="mobile-label">Love</span></button>
+      <button data-mood="laugh" aria-pressed="false"><span class="mood-icon">☺</span><span class="desktop-label">Make me laugh</span><span class="mobile-label">Laughter</span></button>
+      <button data-mood="poetry" aria-pressed="false"><span class="mood-icon">☾</span><span class="desktop-label">A little poetry</span><span class="mobile-label">Poetry</span></button>
+    </nav>
+    <div class="top-tools">
+      <button id="sound-quick" class="sound-quick" aria-label="Turn on sound" aria-pressed="false"><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="quick-sound-label">Sound off</span></button>
+      <button id="browse" class="text-button" aria-haspopup="dialog"><svg><use href="#i-search"/></svg><span>Find a moment</span></button>
+      <button id="options-toggle" class="icon-button" aria-label="View options" aria-expanded="false" aria-controls="options"><svg><use href="#i-menu"/></svg></button>
     </div>
-    <footer class="footer"><span id="coverage">The collection is growing.</span><div class="zoom-controls" aria-label="Zoom"><button id="zoom-out" class="icon-button" aria-label="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><span id="zoom-label">1×</span><button id="zoom-in" class="icon-button" aria-label="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button></div></footer>
-    <aside id="reader" class="reader" aria-labelledby="reader-title" hidden>
-      <div class="reader-top"><div class="sender"><span id="sender-initial" aria-hidden="true"></span><span id="reader-position"></span></div><button id="close-reader" class="icon-button" aria-label="Close comment"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
-      <div class="reader-scroll"><div id="reader-moods" class="reader-moods"></div><h1 id="reader-title"></h1><p id="reader-byline"></p><div id="thread"></div><div class="reader-links"><button id="same-author" class="text-button">More from this person</button><a id="original" target="_blank" rel="noopener noreferrer">Original comment <span aria-hidden="true">↗</span></a></div></div>
-      <div class="reader-bottom"><button id="prev-comment" class="icon-button" aria-label="Previous comment"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><span id="read-count"></span><button id="next-comment" class="text-button">Next <span aria-hidden="true">→</span></button></div>
-    </aside>
-    <section id="library" class="library" aria-labelledby="library-title" hidden>
-      <div class="library-heading"><div><h1 id="library-title">The words, up close.</h1><p id="library-note"></p></div><button id="close-library" class="icon-button" aria-label="Close reading list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
-      <div id="library-list"></div>
-    </section>
-    <div id="toast" role="status" class="toast" hidden></div>
-    <span id="accessible-status" class="sr-only" aria-live="polite"></span>
-  </main>
-  <script type="module" src="/src/main.js"></script>
+  </header>
+  <button id="leave-zen" class="glass text-button" hidden>↖ Return to the controls</button>
+  <section id="options" class="options-panel glass" aria-label="View options" hidden>
+    <p class="eyebrow">MAKE YOURSELF AT HOME</p>
+    <button id="motion-toggle" aria-pressed="false"><svg><use href="#i-pause"/></svg><span>Pause the atmosphere</span><span class="option-value" id="motion-state">Off</span></button>
+    <button id="sound-toggle" aria-pressed="false"><svg><use href="#i-sound"/></svg><span>Ambient sound</span><span class="option-value" id="sound-state">Off</span></button>
+    <div class="sound-settings">
+      <label for="sound-volume">Sound level <output id="volume-value">32%</output></label><input id="sound-volume" type="range" min="0" max="100" value="32" aria-label="Sound level">
+      <label for="sound-mode" class="sr-only">Sound texture</label><select id="sound-mode"><option value="full">Night air & little notes</option><option value="notes">Only little notes</option></select>
+    </div>
+    <button id="reduced-toggle" aria-pressed="false"><svg><use href="#i-moon"/></svg><span>Gentler motion</span><span class="option-value" id="reduced-state">Off</span></button>
+    <button id="atmosphere-toggle" aria-pressed="true"><svg><use href="#i-star"/></svg><span>Stardust & nebula</span><span class="option-value" id="atmosphere-state">On</span></button>
+    <button id="zen-toggle"><svg><use href="#i-moon"/></svg><span>Just me and the sky</span><span class="option-value">F</span></button>
+    <button id="energy-toggle" aria-pressed="false"><svg><use href="#i-moon"/></svg><span>Lighter on this device</span><span class="option-value" id="energy-state">Off</span></button>
+    <button id="tap-nav-toggle" aria-pressed="false"><svg><use href="#i-home"/></svg><span>Tap-to-move controls</span><span class="option-value" id="tap-nav-state">Off</span></button>
+    <button id="paper-toggle" aria-pressed="true"><svg><use href="#i-bookmark"/></svg><span>Reading surface</span><span class="option-value" id="paper-state">Paper</span></button>
+    <button id="fullscreen"><svg><use href="#i-expand"/></svg><span>Fill the screen</span></button>
+    <div class="menu-divider"></div>
+    <button class="import-trigger"><svg><use href="#i-import"/></svg><span>Load a local collection</span></button>
+    <button id="help-open"><svg><use href="#i-help"/></svg><span>A little guidance</span></button>
+    <button id="replay-opening"><svg><use href="#i-star"/></svg><span>See the sky arrive again</span></button>
+    <button id="forget-trail"><svg><use href="#i-route"/></svg><span>Reset visited & kept moments</span></button>
+    <p class="menu-footnote">No uploads. No tracking. Just these words.</p>
+  </section>
+  <button id="author-chip" class="filter-chip" hidden></button>
+  <button id="pending-update" class="update-chip" hidden>New moments are ready · Refresh sky</button>
+  <div id="sample-label" class="sample-label" hidden>SAMPLE SKY <span>· not her comments</span></div>
+  <section id="empty" class="empty-state">
+    <svg class="empty-star" aria-hidden="true"><use href="#i-star"/></svg>
+    <p class="eyebrow">EVERY WORD HAS A PLACE</p>
+    <div class="arrival-orbit" aria-hidden="true"><span></span><i></i></div>
+    <h1>For the words<br><em>worth keeping.</em></h1>
+    <p>Every joke. Every little kindness.<br>A universe made from the things they left you.</p>
+    <button class="primary-button import-trigger"><svg><use href="#i-import"/></svg>Open her comments</button>
+    <button id="demo-button" class="sample-button">Take a look inside · sample sky <span aria-hidden="true">↗</span></button>
+    <p class="privacy-note">A local JSON file. Nothing leaves this device.<br>The sample is illustrative, not her private collection.</p>
+  </section>
+  <section id="loading" class="loading-state" role="status" hidden>
+    <svg aria-hidden="true"><use href="#i-star"/></svg><p id="loading-label">Measuring every little moment…</p>
+    <progress id="load-progress" max="1" value="0" aria-label="Building the constellation"></progress>
+  </section>
+  <button id="skip-opening" class="skip-opening" hidden>Skip the arrival <span aria-hidden="true">↗</span></button>
+  <section id="entry-invitation" class="entry-invitation" aria-label="An invitation to explore" hidden>
+    <p class="eyebrow" id="entry-kicker">A LITTLE UNIVERSE. ALL IN THE WORDS.</p>
+    <p class="entry-line" id="entry-line">From far away, a name.<br>Up close, <em>all the little things.</em></p>
+    <div class="entry-actions"><button id="enter-first" class="entry-button">Come closer <svg><use href="#i-arrow"/></svg></button><button id="resume-place" class="text-button" hidden>Back to where I was ↗</button></div>
+    <p class="entry-footnote" id="entry-instruction">Or simply scroll into the words. There’s no wrong way.</p>
+  </section>
+  <button id="first-read" class="first-read glass" hidden><span class="eyebrow">YOU’RE HERE</span><span>Read this little moment <span aria-hidden="true">↗</span></span></button>
+  <div id="first-zoom-whisper" class="zoom-whisper" hidden>The same words. A little closer.</div>
+  <div id="world-chrome" hidden>
+    <footer class="bottom-bar">
+      <div class="journey"><span class="journey-marker" aria-hidden="true"></span><div><p class="eyebrow" id="depth-label">THE WHOLE SKY</p><p id="gesture-hint">Scroll to come closer. Drag to wander.</p><span class="seen-label" id="seen-label"></span></div></div>
+      <div class="discovery-dock">
+        <button id="journey-toggle" class="discover-button"><svg><use href="#i-route"/></svg><span>Wander with me</span><svg class="discover-arrow"><use href="#i-arrow"/></svg></button>
+        <button id="surprise" class="surprise-button" aria-label="Discover a surprise moment" title="Surprise me (S)"><svg><use href="#i-star"/></svg></button>
+      </div>
+      <div class="navigator">
+        <button id="retrace" class="retrace-button" title="Previous view (B)" hidden><svg aria-hidden="true"><use href="#i-route"/></svg><span>My previous view</span></button>
+        <button id="map-button" class="map-button" aria-label="Constellation map: click to navigate"><canvas id="minimap" width="360" height="88" aria-hidden="true"></canvas></button>
+        <div class="zoom-controls"><button id="home" aria-label="Return to the whole sky" title="Whole sky (Home)"><svg><use href="#i-home"/></svg></button><span class="control-divider"></span><button id="zoom-out" aria-label="Move farther away">−</button><output id="zoom-label" aria-label="Magnification">1.0×</output><button id="zoom-in" aria-label="Move closer">+</button></div>
+      </div>
+    </footer>
+  </div>
+  <section id="journey-hud" class="journey-hud glass" aria-label="Guided wander" hidden>
+    <button id="journey-prev" class="icon-button" aria-label="Previous stop">←</button>
+    <div><span class="eyebrow">A LITTLE WANDER</span><p id="journey-counter">01 <span>/ 07</span></p></div>
+    <button id="journey-next" class="icon-button" aria-label="Next stop">→</button>
+    <span class="hud-divider"></span><button id="journey-end" class="text-button">Back to my sky</button>
+  </section>
+  <button id="waypoint" class="waypoint glass" hidden><span id="waypoint-label" class="eyebrow"></span><span>Read these words <span aria-hidden="true">↗</span></span></button>
+  <div id="drop-zone" class="drop-zone" hidden><svg aria-hidden="true"><use href="#i-import"/></svg><h2>A new sky.</h2><p>Drop a comment JSON. It stays on this device.</p></div>
+  <nav id="tap-navigation" class="tap-navigation glass" aria-label="Move through the sky without dragging" hidden>
+    <button data-pan="up" aria-label="Move up">↑</button><button data-pan="left" aria-label="Move left">←</button><button data-pan="down" aria-label="Move down">↓</button><button data-pan="right" aria-label="Move right">→</button>
+  </nav>
+  <div id="hover-label" class="hover-label" hidden></div>
+  <div id="notice" class="notice glass" role="status" hidden></div>
+  <div id="graphics-error" class="graphics-error glass" role="alert" hidden></div>
+  <input id="import-file" type="file" accept=".json,application/json" hidden>
+  <p id="sky-help" class="sr-only">Plus and minus zoom. Arrow keys pan. Home returns to the whole sky. S discovers a comment. L opens the reading list. Space pauses atmosphere. Escape closes a dialog. F hides the controls. J starts a guided wander. Control or Command K searches. M toggles sound. B retraces the previous view. Optional tap-to-move buttons are in View options. The position of each comment stays the same at every distance.</p>
+  <div id="live-status" class="sr-only" aria-live="polite"></div>
+</div>
+<dialog id="reader" class="reader" aria-labelledby="reader-title">
+  <div class="reader-top"><span id="reader-title" class="eyebrow">A LITTLE MOMENT</span><div class="reader-tools"><button id="copy-words" class="icon-button" aria-label="Copy the exact original words" title="Copy original words"><svg aria-hidden="true"><use href="#i-copy"/></svg></button><button id="reader-sound" class="icon-button" aria-label="Turn on sound" aria-pressed="false"><svg><use href="#i-sound"/></svg></button><button id="keep-moment" class="icon-button" aria-label="Keep this moment on this device" aria-pressed="false"><svg><use href="#i-bookmark"/></svg></button><button id="reader-close" class="icon-button" aria-label="Close comment and return to your place"><svg><use href="#i-close"/></svg></button></div></div>
+  <nav class="reading-route" aria-label="Your reading trail">
+    <div class="reading-history"><button id="reader-previous" aria-label="Previous comment in your reading trail" disabled>← <span>Previous</span></button><span id="reading-position" aria-label="Reading trail position"></span><button id="reader-forward" aria-label="Next comment in your reading trail" disabled><span>Next</span> →</button></div>
+    <button id="reader-results" hidden>Back to results ↗</button>
+  </nav>
+  <div class="reader-scroll">
+    <div class="reading-caption"><span id="reader-moods" class="reader-moods"></span><div class="type-controls" aria-label="Reading text size"><button id="type-down" aria-label="Smaller reading text">A−</button><button id="type-up" aria-label="Larger reading text">A+</button></div></div>
+    <span class="quotation-mark" aria-hidden="true">“</span>
+    <blockquote id="quote" dir="auto"></blockquote>
+    <div class="signature"><span class="signature-star" aria-hidden="true">✧</span><div><button id="reader-author" class="author-link"></button><p id="reader-date"></p></div></div>
+    <a id="reader-source" class="source-link" target="_blank" rel="noopener noreferrer" hidden>View original comment ↗</a>
+    <p id="keep-feedback" class="keep-feedback" hidden>Kept here, on this device.</p>
+    <details id="conversation"><summary id="conversation-summary"></summary><div id="replies"></div></details>
+  </div>
+  <footer class="reader-footer"><button id="return-to-sky" class="text-button">← Back to this sky</button><button id="next-moment" class="text-button">Another moment <span aria-hidden="true">↗</span></button></footer>
+</dialog>
+<dialog id="library" class="library" aria-labelledby="library-title">
+  <header class="library-header"><div><p class="eyebrow">EVERY WORD, WITHIN REACH</p><h2 id="library-title">The things they left.</h2></div><button id="library-close" class="icon-button" aria-label="Close reading list"><svg><use href="#i-close"/></svg></button></header>
+  <label class="search-field"><svg><use href="#i-search"/></svg><input id="search" type="search" placeholder="Find a word, a feeling, a person…" aria-label="Search comments and authors"></label>
+  <nav id="library-tabs" class="library-tabs" aria-label="Which moments to show"><button data-shelf="all" aria-pressed="true">All moments</button><button data-shelf="unvisited" aria-pressed="false">Unvisited</button><button data-shelf="kept" aria-pressed="false">Kept <span id="kept-count">0</span></button></nav>
+  <button id="clear-search-filters" class="clear-search-filters" hidden>Clear the search and highlights</button>
+  <p id="result-count" class="result-count" aria-live="polite"></p>
+  <ol id="list-results" class="list-results"></ol>
+  <button id="more-results" class="text-button" hidden>Show more moments</button>
+  <footer class="library-footer"><button class="text-button import-trigger">Load another local collection ↗</button><p id="archive-note">Original words. Original connections.</p></footer>
+</dialog>
+<dialog id="help" class="help" aria-labelledby="help-title">
+  <button id="help-close" class="icon-button close-corner" aria-label="Close guidance"><svg><use href="#i-close"/></svg></button>
+  <p class="eyebrow">THERE IS NO RIGHT WAY TO WANDER</p><h2 id="help-title">Come a little closer.</h2>
+  <p>These are the same words at every distance. They aren’t replaced or rearranged when you zoom. You’re moving through their space.</p>
+  <dl><dt>Scroll or pinch</dt><dd>Travel toward or away from the words.</dd><dt>Drag</dt><dd>Wander across the constellation.</dd><dt>Choose a comment</dt><dd>Approach it, then read the original words and available conversation.</dd><dt>Choose a mood</dt><dd>Light up matching comments without moving them. Mood tags are provisional.</dd><dt>Browse</dt><dd>Search, read, and navigate without using the canvas.</dd></dl>
+  <p class="help-note">Keyboard: <kbd>+</kbd> <kbd>−</kbd> zoom · <kbd>↑↓←→</kbd> move · <kbd>Home</kbd> whole sky · <kbd>S</kbd> surprise · <kbd>L</kbd> browse · <kbd>Space</kbd> pause.</p>
+  <p class="privacy-note">Only existing author connections are drawn. Nothing is posted back to Instagram. Sound is off until you choose it. M toggles sound. Volume, notes-only sound, and gentler motion live in View options. Turning off stardust leaves the actual word structure visible. B retraces your view. Previous and Next retrace your reading; Back to results restores your search. Optional tap-to-move buttons replace dragging. Your last settled view is remembered locally; no comment text is stored in that memory.</p>
+</dialog>
+<noscript><p class="noscript">This interactive constellation needs JavaScript. Your original comment JSON remains readable as a text file.</p></noscript>
+<script type="module" src="./src/main.js"></script>
 </body>
 </html>
