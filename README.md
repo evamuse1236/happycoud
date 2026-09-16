@@ -37,6 +37,20 @@ Original links and known parent relationships are preserved. Account-owner comme
 
 Open the edge light to choose **Feeling loved**, **Make me laugh**, or **A little poetry** directly. Matching original comments become brighter. A cello-like, marimba-like, or flute-like part plays recurring phrases alongside the existing score for as long as the feeling stays selected. It follows the current harmony, softens while reading, and changes smoothly when another feeling is selected. **Show everything** returns to the base score. Silent entry, mute, hidden-tab suspension, and the optional piano-only setting remain respected.
 
+## The song in the clouds
+
+After entering and letting the cloud form, the small radar at bottom left gathers the song's source comments. The recording starts after their arrival. Original comments retain their wording and attribution; their sung words light up in warm starlight. Additional lyric words appear in blue as they are sung. Pause, seek, mute, replay, and return to the sky are available; Escape returns and Space pauses when focus is on the lyrics. The ambient score pauses for the song and returns only if it was enabled beforehand. Hiding the page pauses the recording.
+
+The local song is prepared from `song-work/lyric-matches.json` and the MAI transcript. To refresh its ignored playback assets after reviewing that mapping:
+
+```sh
+node scripts/prepare-song.mjs '/absolute/path/to/original.mp3'
+npm run build
+npm run build:standalone
+```
+
+The song, original comments, alignment, and transcription responses remain private, ignored local artifacts. The standalone HTML embeds the recording and alignment for offline playback. Without those assets, or after importing a different collection, the radar stays hidden. See [the song implementation notes](docs/song.md) for timing and provenance limits.
+
 ## Browser checks
 
 With Python Playwright installed and Chrome available:
@@ -47,6 +61,7 @@ python tools/browser-checks.py --canvas
 python tools/check-local-sky.py
 python tools/check-mood-score.py
 python tools/check-score-render.py
+python tools/check-song.py
 ```
 
 Reports and screenshots stay under ignored `test-results/`. The portable source-only build is `node tools/build-cinematic.mjs`; it produces `dist-cinematic/Khushi-Cinematic-Sky.html` without private data. Legacy `immersion.js` and `reader.css` are retained for reference but are not loaded by the cinematic application.

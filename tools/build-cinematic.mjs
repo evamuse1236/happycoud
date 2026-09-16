@@ -9,8 +9,10 @@ for(const file of (await readdir(path.join(root,'src'))).filter(n=>n.endsWith('.
   imports['hc:'+file.slice(0,-3)]='data:text/javascript;base64,'+Buffer.from(text).toString('base64');
 }
 let html=await readFile(path.join(root,'index.html'),'utf8');
-const css=await readFile(path.join(root,'src/style.css'),'utf8');
-html=html.replace('<link rel="stylesheet" href="./src/style.css">',`<style>\n${css}\n</style>`);
+for(const name of ['style','song']){
+  const css=await readFile(path.join(root,`src/${name}.css`),'utf8');
+  html=html.replace(`<link rel="stylesheet" href="./src/${name}.css">`,`<style>\n${css}\n</style>`);
+}
 html=html.replace('<script type="module" src="./src/main.js"></script>',`<script type="importmap">${JSON.stringify({imports})}</script>\n<script type="module">import 'hc:main';</script>`);
 const output=path.join(root,'dist-cinematic');await mkdir(output,{recursive:true});
 await writeFile(path.join(output,'Khushi-Cinematic-Sky.html'),html);

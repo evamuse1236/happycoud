@@ -18,7 +18,7 @@ for(const name of names){
   imports['hc:'+name]='data:text/javascript;base64,'+Buffer.from(code).toString('base64');
 }
 let html=await fs.readFile(path.join(root,'index.html'),'utf8');
-for (const name of ['style','reader']) {
+for (const name of ['style','reader','song']) {
   const css=await fs.readFile(path.join(root,'src',name+'.css'),'utf8');
   html=html.replace(`<link rel="stylesheet" href="./src/${name}.css">`,`<style>\n${css}\n</style>`);
 }
@@ -26,6 +26,11 @@ html=html.replace('<script type="module" src="./src/main.js"></script>',`<script
 try {
   const data=JSON.parse(await fs.readFile(path.join(root,'public/data/comments.json'),'utf8'));
   html=html.replace('</body>',`<script>globalThis.HAPPYCOUD_EMBEDDED=${JSON.stringify(data).replace(/</g,'\\u003c')};</script>\n</body>`);
+} catch(error) { if(error.code!=='ENOENT')throw error; }
+try {
+  const song=JSON.parse(await fs.readFile(path.join(root,'public/data/song.json'),'utf8'));
+  const audio=await fs.readFile(path.join(root,'public/media/khushti.mp3'));
+  html=html.replace('</body>',`<script>globalThis.HAPPYCOUD_SONG=${JSON.stringify(song).replace(/</g,'\\u003c')};globalThis.HAPPYCOUD_SONG_AUDIO='data:audio/mpeg;base64,${audio.toString('base64')}';</script>\n</body>`);
 } catch(error) { if(error.code!=='ENOENT')throw error; }
 await fs.writeFile(path.join(dist,'Khushi-Observatory.html'),html);
 console.log('Built dist-standalone/ including Khushi-Observatory.html. Both use exactly the same source modules.');

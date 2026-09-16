@@ -11,6 +11,7 @@ import { LocalMemory } from './journey.js';
 import { relatedComments } from './reader-context.js';
 import { installStarCursor } from './star-cursor.js';
 import { sampleData } from './demo.js';
+import { SongExperience } from './song.js';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const body=document.body,root=document.documentElement;
@@ -30,6 +31,14 @@ let hover=null,hoverAt=0,hoverPoint=null,noticeTimer=0,whisperTimer=0,entered=fa
 let graphicsFallbackReason=null;
 let shelf='all',resultLimit=80,searchTimer=0,wasZoomed=false,noticeText='';
 const reduced=()=>manualReduced||motionQuery.matches;
+let restoreScore=false;
+const song=new SongExperience({
+  reduced:()=>reduced()||paused,
+  projectComment:id=>{const node=layout.nodes.find(n=>n.comment.id===id);return node?project(node,rig.current,innerWidth,innerHeight):null;},
+  onOpen:()=>{restoreScore=audio.wanted;audio.disable();syncSound();hideWhisper();orbit(false);clearHover();rig.interrupt();operation++;pending=null;selected=null;readingOrigin=null;renderer.selected=-1;phase('sky');},
+  onClose:()=>{if(restoreScore)audio.enable().then(syncSound).catch(e=>notify(e.message));else syncSound();},
+  announce,
+});
 installStarCursor({reduced});
 const modal=()=>!!document.querySelector('dialog[open]');
 const eligible=c=>!state.mood||c.moods.includes(MOODS.find(m=>m.bit===state.mood)?.id);
@@ -83,7 +92,7 @@ function bindControls(){
       if(pending||selected||state.phase==='returning'){operation++;pending=null;selected=null;readingOrigin=null;renderer.selected=-1;phase('sky');}
     },
     onNavigate:()=>{},getPlane:point=>hitTest(layout.nodes,rig.current,innerWidth,innerHeight,point,eligible)?.z??0,
-    canCoast:()=>!reduced(),isBlocked:()=>!state.ready||!entered||building||modal(),
+    canCoast:()=>!reduced(),isBlocked:()=>!state.ready||!entered||building||modal()||song.active,
   });
 }
 function clearHover(){hover=null;hoverPoint=null;renderer?.setHover(-1);$('#hover-name').hidden=true;$('#focus-light').classList.remove('active');canvas.classList.remove('pointing');}
@@ -148,7 +157,7 @@ async function setCollection(input,{url=null,keepPrevious=false}={}){
     const old=renderer;
     if(keepPrevious&&data.comments.length)previousData={data,url:sourceURL};
     controls?.dispose();canvas.replaceWith(element);canvas=element;renderer=candidate;candidate=null;
-    old?.dispose();data=normalized;layout=nextLayout;sourceURL=url;memory.useCollection(data);
+    old?.dispose();data=normalized;layout=nextLayout;sourceURL=url;memory.useCollection(data);song.setCollection(data.sample?[]:data.comments);
     audio.setMood('all');state.ready=true;state.mood=0;$('#show-everything').hidden=true;state.moodFrom=0;state.moodBlend=1;selected=null;pending=null;history=[];historyIndex=-1;readingOrigin=null;libraryOrigin=null;operation++;
     state.readingMix=0;state.transition=null;root.style.setProperty('--reading-mix',0);
     for(const d of $$('dialog[open]'))d.close();
@@ -362,6 +371,7 @@ $('#demo').addEventListener('click',async()=>{try{$('#empty').hidden=true;$('#lo
 $('#undo-import').addEventListener('click',async()=>{if(!previousData)return;const prior=previousData;try{await setCollection(prior.data,{url:prior.url,keepPrevious:true});notify('The previous sky is back.');}catch(e){notify(e.message);}});
 
 window.addEventListener('keydown',e=>{
+  if(song.active||e.defaultPrevented)return;
   const input=e.target.closest('input,textarea,select,[contenteditable=true]');
   if(e.key==='Escape'){
     if(modal()){e.preventDefault();const top=$$('dialog[open]').at(-1);if(top.id==='reader')closeReader();else closeSheet(top);return;}
@@ -404,6 +414,7 @@ function frame(now){
   if(document.hidden){frameTime=0;return;}
   const dt=frameTime?Math.min(.06,(now-frameTime)/1000):0;frameTime=now;
   if(!renderer||building)return;
+  song.setReady(entered&&state.ready&&state.birth>=1&&$('#gate').hidden&&!building);
   const begin=performance.now();
   if(!paused&&!reduced())simulationTime+=dt;
   if(state.phase==='birth'){
@@ -446,7 +457,7 @@ if(new URLSearchParams(location.search).has('debug')||globalThis.HAPPYCOUD_DEBUG
     snapshot:()=>({phase:state.phase,ready:state.ready,count:data.comments.length,sample:data.sample,birth:state.birth,readingMix:state.readingMix,
       camera:{...rig.current},target:{...rig.target},homeZ:rig.homeZ,fingerprint:layout.fingerprint,renderer:renderer?.kind,graphicsFallbackReason,frames:frameCount,lastFrameMs:frameCost,
       nodes:layout.nodes.map(n=>({id:n.comment.id,x:n.x,y:n.y,z:n.z,font:n.font,w:n.w,h:n.h,point:project(n,rig.current,innerWidth,innerHeight)})),
-      selected:selected?.comment.id,readingOrigin,history:[...history],kept:[...memory.kept],pointers:controls?.pointers.size,
+      selected:selected?.comment.id,readingOrigin,history:[...history],kept:[...memory.kept],pointers:controls?.pointers.size,song:song.snapshot(),
       mood:MOODS.find(m=>m.bit===state.mood)?.id,audio:{mood:audio.mood,instrument:audio.mood==='all'?null:MOOD_INSTRUMENTS[audio.mood].name,moodNotes:audio.stats.moodNotes,moodTargets:{...audio.moodTargets},moodVoices:Object.fromEntries(Object.keys(MOOD_INSTRUMENTS).map(id=>[id,[...audio.voices].filter(v=>v.mood===id).length])),chordIndex:audio.chordIndex,enabled:audio.enabled,wanted:audio.wanted,visible:audio.visible,stats:{...audio.stats},voices:audio.voices.size,cachedNotes:audio.buffers.size},error:renderer?.gl&&!renderer.lost?renderer.gl.getError():null}),
     select:id=>approach(layout.nodes.find(n=>n.comment.id===id)),finish:()=>finishBirth(true),import:data=>setCollection(data,{keepPrevious:true}),
     original:id=>data.comments.find(c=>c.id===id),
