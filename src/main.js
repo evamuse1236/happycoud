@@ -101,7 +101,7 @@ function paintHover(now){
     label.style.left=clamp(p.x,85,innerWidth-85)+'px';label.style.top=clamp(p.y+hover.h*p.scale/2+9,70,innerHeight-115)+'px';label.hidden=!label.textContent;
   }
 }
-function orbit(open){$('#orbit').hidden=!open;$('#beacon').setAttribute('aria-expanded',String(open));if(open){hideWhisper();$('#home-map').hidden=true;}else paintMap();}
+function orbit(open){$('#show-everything').hidden=!state.mood||open;$('#orbit').hidden=!open;$('#beacon').setAttribute('aria-expanded',String(open));if(open){hideWhisper();$('#home-map').hidden=true;}else paintMap();}
 function whisper(text,delay=0){clearTimeout(whisperTimer);whisperTimer=setTimeout(()=>{
   if(modal()||wasZoomed||!entered)return;
   const w=$('#whisper');w.textContent=text;w.hidden=false;requestAnimationFrame(()=>w.classList.add('visible'));
@@ -147,7 +147,7 @@ async function setCollection(input,{url=null,keepPrevious=false}={}){
     if(keepPrevious&&data.comments.length)previousData={data,url:sourceURL};
     controls?.dispose();canvas.replaceWith(element);canvas=element;renderer=candidate;candidate=null;
     old?.dispose();data=normalized;layout=nextLayout;sourceURL=url;memory.useCollection(data);
-    audio.setMood('all');state.ready=true;state.mood=0;state.moodFrom=0;state.moodBlend=1;selected=null;pending=null;history=[];historyIndex=-1;readingOrigin=null;libraryOrigin=null;operation++;
+    audio.setMood('all');state.ready=true;state.mood=0;$('#show-everything').hidden=true;state.moodFrom=0;state.moodBlend=1;selected=null;pending=null;history=[];historyIndex=-1;readingOrigin=null;libraryOrigin=null;operation++;
     state.readingMix=0;state.transition=null;root.style.setProperty('--reading-mix',0);
     for(const d of $$('dialog[open]'))d.close();
     dust.setLayout(layout);rig.home();rig.tick(0,true);bindControls();
@@ -301,7 +301,7 @@ function renderResults(){
 }
 function paintMap(){
   const away=Math.abs(Math.log(rig.current.z/rig.homeZ))>.12||Math.hypot(rig.current.x,rig.current.y)>80;
-  $('#home-map').hidden=!entered||!away||!$('#orbit').hidden;
+  $('#home-map').hidden=!entered||!away||!$('#orbit').hidden||!!state.mood;
   const c=$('#map'),ctx=c.getContext('2d');ctx.clearRect(0,0,280,96);
   if(!layout.nodes.length)return;
   const map=n=>({x:140+n.x*.10,y:47-n.y*.10});
@@ -340,6 +340,7 @@ $('#more-results').addEventListener('click',()=>{resultLimit+=80;renderResults()
 $$('[data-mood]').forEach(el=>el.addEventListener('click',()=>{
   const chosen=MOODS.find(m=>m.id===el.dataset.mood);state.moodFrom=state.mood;state.mood=chosen.bit;state.moodBlend=reduced()?1:0;
   $$('[data-mood]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mood===chosen.id)));audio.setMood(chosen.id);if($('#feelings').open)closeSheet($('#feelings'));orbit(false);clearHover();$('#beacon').focus({preventScroll:true});
+  if(!chosen.bit)home();
   announce(chosen.bit?`${chosen.label}. Matching words are brighter.`:'Every light is visible.');
   if(chosen.bit&&!layout.nodes.some(n=>n.mask&chosen.bit))notify('The archive has no comments with this label. Nothing has been moved or deleted.');
 }));

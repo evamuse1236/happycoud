@@ -35,7 +35,7 @@ Original links and known parent relationships are preserved. Account-owner repli
 
 ## Feelings and music
 
-Open the edge light to choose **Feeling loved**, **Make me laugh**, or **A little poetry** directly. Matching original comments become brighter. A cello-like, marimba-like, or flute-like part plays recurring phrases alongside the existing score for as long as the feeling stays selected. It follows the current harmony, softens while reading, and changes smoothly when another feeling is selected. **Every feeling** returns to the base score. Silent entry, mute, hidden-tab suspension, and the optional piano-only setting remain respected.
+Open the edge light to choose **Feeling loved**, **Make me laugh**, or **A little poetry** directly. Matching original comments become brighter. A cello-like, marimba-like, or flute-like part plays recurring phrases alongside the existing score for as long as the feeling stays selected. It follows the current harmony, softens while reading, and changes smoothly when another feeling is selected. **Show everything** returns to the base score. Silent entry, mute, hidden-tab suspension, and the optional piano-only setting remain respected.
 
 ## Browser checks
 

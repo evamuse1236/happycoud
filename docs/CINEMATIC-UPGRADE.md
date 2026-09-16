@@ -2,7 +2,7 @@
 
 The supplied Cinematic Sky V frontend is merged with the existing Vite collector and local archive. The installed version restores two-step selection: first approach, then read on another click/tap or Enter. Search results and explicit reader navigation open directly. Conversation context and related archive comments appear inline in the sky-backed reader.
 
-Feelings are directly available in the light menu. Each selected feeling adds a continuing, harmonically matched instrument part, not a one-time selection sound. Love adds a cello-like voice; laughter adds marimba; poetry adds flute. Reading reduces the part, Every feeling removes it, and switching preserves the underlying score's progression. Piano-only mode omits these extra layers.
+Feelings are directly available in the light menu. Each selected feeling adds a continuing, harmonically matched instrument part, not a one-time selection sound. Love adds a cello-like voice; laughter adds marimba; poetry adds flute. Reading reduces the part, Show everything removes it, and switching preserves the underlying score's progression. Piano-only mode omits these extra layers.
 
 `npm test` includes the cinematic tests. Earlier tests requiring flying words or navigation sound cues were updated for fixed geometry and quiet controls; consent races and audio limits remain covered. The source-only and private-data standalone build paths both resolve the new modules.
 
