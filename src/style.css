@@ -41,12 +41,7 @@ button.context-comment:hover{color:var(--gold)}
 
 .show-everything{position:absolute;right:68px;bottom:5px;white-space:nowrap;color:var(--gold);min-height:44px;padding:10px 6px}.show-everything span{margin-left:8px}.show-everything:hover{text-decoration:underline;text-underline-offset:5px}
 
-/* Native-size starlight cursors: no animated follower or pointer lag. */
-@media(hover:hover) and (pointer:fine){
-:root{--cursor-sky:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M16%203c0%2010-3%2013-13%2013%2010%200%2013%203%2013%2013%200-10%203-13%2013-13C19%2016%2016%2013%2016%203Z%22%20fill%3D%22%23dcc49c%22%20stroke%3D%22%2304070e%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E") 16 16;--cursor-follow:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2212%22%20fill%3D%22%2304070e%22%20fill-opacity%3D%22.55%22%20stroke%3D%22%23dcc49c%22%20stroke-opacity%3D%22.65%22%2F%3E%3Cpath%20d%3D%22M16%204c0%209-3%2012-12%2012%209%200%2012%203%2012%2012%200-9%203-12%2012-12C19%2016%2016%2013%2016%204Z%22%20fill%3D%22%23fff0cf%22%20stroke%3D%22%2304070e%22%20stroke-width%3D%221.5%22%2F%3E%3C%2Fsvg%3E") 16 16;--cursor-drag:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22m16%202-3%204h6ZM30%2016l-4-3v6ZM16%2030l3-4h-6ZM2%2016l4%203v-6Z%22%20fill%3D%22%23dcc49c%22%20stroke%3D%22%2304070e%22%20stroke-width%3D%221%22%2F%3E%3Cpath%20d%3D%22M16%208c0%206-2%208-8%208%206%200%208%202%208%208%200-6%202-8%208-8-6%200-8-2-8-8Z%22%20fill%3D%22%23fff0cf%22%20stroke%3D%22%2304070e%22%20stroke-width%3D%221.5%22%2F%3E%3C%2Fsvg%3E") 16 16;}
-body,#universe{cursor:var(--cursor-sky),crosshair}
-button,a,summary,input[type="checkbox"],input[type="range"],select,#universe.pointing{cursor:var(--cursor-follow),pointer}
-#universe.dragging{cursor:var(--cursor-drag),grabbing}
-#reader-quote,article.context-comment p,input[type="search"],input[type="text"],textarea{cursor:text}
-button:disabled{cursor:default}
-}
+/* The cursor lives in the top layer so it remains visible over reading dialogs. */
+.star-cursor{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;pointer-events:none;z-index:2147483647;opacity:0;overflow:hidden}
+.star-cursor::backdrop{background:transparent;pointer-events:none}
+@media(hover:hover) and (pointer:fine){html[data-star-cursor="on"],html[data-star-cursor="on"] *{cursor:none!important}}

@@ -9,6 +9,7 @@ import { CondensationField } from './condensation.js';
 import { DURATION, smoother, readDestination, hitTest, chooseMoment } from './cinema.js';
 import { LocalMemory } from './journey.js';
 import { relatedComments } from './reader-context.js';
+import { installStarCursor } from './star-cursor.js';
 import { sampleData } from './demo.js';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -29,6 +30,7 @@ let hover=null,hoverAt=0,hoverPoint=null,noticeTimer=0,whisperTimer=0,entered=fa
 let graphicsFallbackReason=null;
 let shelf='all',resultLimit=80,searchTimer=0,wasZoomed=false,noticeText='';
 const reduced=()=>manualReduced||motionQuery.matches;
+installStarCursor({reduced});
 const modal=()=>!!document.querySelector('dialog[open]');
 const eligible=c=>!state.mood||c.moods.includes(MOODS.find(m=>m.bit===state.mood)?.id);
 function announce(text){$('#live').textContent=text;}
@@ -318,7 +320,7 @@ for(const d of $$('.sheet')){d.addEventListener('click',e=>{if(e.target===d){con
 $('#sound').addEventListener('click',toggleSound);$('#reader-sound').addEventListener('click',toggleSound);$('#comfort-sound').addEventListener('click',toggleSound);
 $('#enter-sound').addEventListener('click',()=>enter(true));$('#enter-silent').addEventListener('click',()=>enter(false));
 $('#skip-birth').addEventListener('click',()=>finishBirth(false));
-$('#brand-home').addEventListener('click',home);$('#home-map').addEventListener('click',home);
+$('#home-map').addEventListener('click',home);
 $('#reader-close').addEventListener('click',()=>closeReader());$('#reader-next').addEventListener('click',nextMoment);
 $('#reader').addEventListener('cancel',e=>{e.preventDefault();closeReader();});
 $('#reader').addEventListener('click',e=>{if(['reader','reader-stage','reader-veil'].some(id=>e.target.id===id||e.target.classList.contains(id)))closeReader();});

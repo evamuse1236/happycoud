@@ -10,4 +10,4 @@ The opt-in procedural piano and sustained harmonic score continues through navig
 
 Visual reference: the user's Downloads/happycoud-cinematic-v5-source.zip. Preserve its spacious composition, starlight palette, restrained controls, full original words, continuous scene, and attention-based sound. Its glow is intentional lighting, not a generic decoration to remove.
 
-When a feeling is active, a quiet Show everything control remains beside the edge light. It clears the feeling and returns to the whole sky. Fine-pointer devices use a small native starlight cursor, a brighter clickable star, and a directional drag star; selectable text retains its normal text cursor.
+When a feeling is active, a quiet Show everything control remains beside the edge light. It clears the feeling and returns to the whole sky. Fine-pointer devices use a white-hot point with a soft stellar halo and a short fading dust trail. Clickable targets make its light pulse slowly. The point follows the pointer exactly; only the trail lingers. Reduced motion removes the trail and pulse. Selectable text retains its normal cursor.

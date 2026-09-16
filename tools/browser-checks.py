@@ -89,7 +89,7 @@ with sync_playwright() as p:
         page.mouse.move(700,450);page.mouse.wheel(0,-100);page.wait_for_timeout(2500)
         check(not page.locator('#reader').evaluate('(el)=>el.open'),'Cancelled flight opened a ghost reader')
         check(page.evaluate('__sky.snapshot().pointers')==0,'Stuck gesture')
-        page.locator('#brand-home').click();page.wait_for_timeout(1900)
+        page.locator('#universe').focus();page.keyboard.press('h');page.wait_for_timeout(1900)
     record('A scroll interrupts a camera approach without a late reader',interruption)
     def nav_library():
         page.locator('#beacon').click();check(page.locator('#orbit').is_visible(),'Navigation constellation did not open')
@@ -101,7 +101,7 @@ with sync_playwright() as p:
         check(page.evaluate('__sky.snapshot().selected')==first,'Search clicked a different comment')
         page.locator('#reader-results').click();page.wait_for_function('document.querySelector("#library").open')
         check(page.locator('#query').input_value()=='ordinary afternoons','Search context lost')
-        page.locator('#library [data-close]').click();page.locator('#brand-home').click();page.wait_for_timeout(1900)
+        page.locator('#library [data-close]').click();page.locator('#universe').focus();page.keyboard.press('h');page.wait_for_timeout(1900)
         return {'matching_results':count}
     record('Stellar navigation, search, selection and return to results',nav_library)
     def keyboard():
