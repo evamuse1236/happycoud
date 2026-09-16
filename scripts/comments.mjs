@@ -25,6 +25,8 @@ export function isGeneric(text) {
   const words = plain.split(/\s+/);
   if (/^(wow|wo|ow)+[wi]*$/.test(plain.replace(/\s/g,''))) return true;
   if (/^[a-z]{10,}$/.test(plain) && !/[aeiou].*[aeiou]/.test(plain)) return true;
+  // Short compliments from other people also help fill the name with real words.
+  if (words.some(w => /^(beautiful|beauty|gorgeous|prety|preti|cute|cutie|cutu|cutest|hot|hotie|hotay|hawt|stuning|lovely|lovly|adorable|sundar|sunder|khubsurat|khoobsurat|pyara|pyari|pyaara|pyaari|sex+y|queen|slay|outstanding|amazing)$/.test(w))) return false;
   // Keep conversational phrases and fuller compliments. Only brief stock reactions go.
   if (words.length >= 3 && new Set(words).size >= 2) return false;
   if (/@[\w.]+/u.test(text) && words.length >= 2) return false;
@@ -114,11 +116,11 @@ export function fromReviewedArchive(archive) {
   const comments = archive.comments.filter(c => !isOwnerComment(c, archive.account)).map(c => {
     const comment = convert(c);
     const rootID = comment.parentId || (!comment.isReply ? comment.id : null);
-    return {...comment, conversation: rootID === null ? [] : all.filter(r => r.id === rootID || r.parentId === rootID)};
+    return {...comment, conversation: rootID === null ? [] : all.filter(r => !isOwnerComment(r, archive.account) && (r.id === rootID || r.parentId === rootID))};
   });
   const result = {account: archive.account, comments, postsRead: archive.posts.length,
     postTotal: archive.posts.length, coverage: archive.coverage,
-    counts: {received: comments.length, context: archive.context_replies?.length || 0},
+    counts: {received: comments.length, context: (archive.context_replies || []).filter(c => !isOwnerComment(c, archive.account)).length},
     source: 'reviewed-archive', provisional: true,
     notes: 'Reviewed comments with original wording. Instagram visibility gaps remain; mood tags are provisional.'};
   result.version = crypto.createHash('sha256').update(JSON.stringify(result)).digest('hex').slice(0,16);
@@ -154,7 +156,7 @@ export async function collectComments() {
   const received=[...all.values()].filter(c=>!isOwnerComment(c,owner) && (reviewedIDs.has(c.id)||!isGeneric(c.text)));
   const comments=received.map(c=>{
     const rootId=c.parentId||(!c.isReply?c.id:null);
-    const conversation=rootId===null?[]:[...all.values()].filter(r=>r.id===rootId || r.parentId===rootId);
+    const conversation=rootId===null?[]:[...all.values()].filter(r=>!isOwnerComment(r,owner) && (r.id===rootId || r.parentId===rootId));
     return {...c,conversation};
   });
   let postTotal=71;
@@ -162,7 +164,7 @@ export async function collectComments() {
   const result={account:owner,postsRead,postTotal,comments,
     counts:{received:comments.length,raw:all.size,owner:[...all.values()].filter(c=>isOwnerComment(c,owner)).length,filtered:all.size-comments.length-[...all.values()].filter(c=>isOwnerComment(c,owner)).length},
     coverage:reviewed?.coverage,source:'reviewed-and-expanded',
-    provisional:true,notes:'Expanded real archive. Brief generic reactions and account-owner comments are excluded from the cloud. Owner replies appear only as conversation context. Mood tags and historical coverage are provisional.'};
+    provisional:true,notes:'Expanded real archive. Emoji-only reactions and filler are excluded; short genuine compliments are included. Account-owner comments are excluded from both the cloud and conversation context. Mood tags and historical coverage are provisional.'};
   result.version=crypto.createHash('sha256').update(JSON.stringify(result)).digest('hex').slice(0,16);
   return result;
 }

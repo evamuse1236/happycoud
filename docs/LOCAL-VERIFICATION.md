@@ -15,3 +15,7 @@ Browser checks use local Chrome. Physical phones and Safari are not verified. Pr
 Final mood-score verification observed at least two recurring phrases per selected feeling, with 10 peak concurrent voices against a 24-voice limit. Reading retained the instrument at its quieter target; clearing feelings drained all instrument voices. Tests inspect live voice lifetimes and scheduled mix targets because Chrome can retain stale AudioParam values after a bus becomes inactive.
 
 `tools/check-score-render.py` rendered the base score and all three added voices through the actual engine. All samples were finite, the maximum measured peak was 0.0671 (below clipping at 1.0), and output before enablement was exactly silent. This is a sample-level check, not listening or physical-device certification.
+
+## Owner exclusion and refilter
+
+The current collection contains 346 distinct comments from other people across 71 source posts. The collector and import adapter exclude khushi.o_o, khushi.0_0, khusi.0_0, explicit owner flags, and the configured account (case-insensitive, ignoring a leading @ and surrounding whitespace). Owner replies are excluded from conversation context too. Mentions of Khushi and similarly named other authors remain. Short genuine compliments add 51 records over the earlier 295-comment filter; emoji-only reactions and filler remain excluded. Source archives are unchanged.

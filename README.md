@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:4317/. The collector reads `../instagram-comments-khushi-2026-09-16/`: it combines the reviewed `khushi-comments-filtered.json` with the original `post-*.json` snapshots. The expanded filter currently includes 295 received comments, retaining fuller compliments and conversational remarks while excluding brief stock reactions. Khushi’s own comments never enter the cloud or related-comment list; her replies appear only inside their original conversations. Reviewed wording is preserved, and the source files are never changed. With no local data, import an archive through the interface. A clearly labelled sample sky is available when no archive is present; it is never mixed with the real collection.
+Open http://127.0.0.1:4317/. The collector reads `../instagram-comments-khushi-2026-09-16/`: it combines the reviewed `khushi-comments-filtered.json` with the original `post-*.json` snapshots. The expanded filter currently includes 346 received comments, retaining short genuine compliments and conversational remarks while excluding emoji-only reactions and filler. Khushi’s own comments never enter the cloud or related-comment list; her replies are also excluded from conversation context. Reviewed wording is preserved, and the source files are never changed. With no local data, import an archive through the interface. A clearly labelled sample sky is available when no archive is present; it is never mixed with the real collection.
 
 ## Verify and build
 
@@ -31,7 +31,7 @@ Run `npm run build` before the standalone build to refresh the local snapshot. `
 - `src/main.js`: navigation, search, reading history, local saved marks, and optional sound.
 - `tests/`: regression tests and synthetic test fixtures, used only for explicit sample and test runs.
 
-Original links and known parent relationships are preserved. Account-owner replies provide context, not received-comment counts. Coverage has Instagram visibility gaps, and mood labels are provisional. Motion has a reduced-motion path; locally synthesized sound follows movement and reading after explicit opt-in; the reader remains selectable HTML.
+Original links and known parent relationships are preserved. Account-owner comments are excluded from every reading surface. Coverage has Instagram visibility gaps, and mood labels are provisional. Motion has a reduced-motion path; locally synthesized sound follows movement and reading after explicit opt-in; the reader remains selectable HTML.
 
 ## Feelings and music
 

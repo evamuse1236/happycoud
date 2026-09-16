@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {isGeneric,parseSnapshot,moodsFor} from './comments.mjs';
 
 test('generic reactions are excluded while specific jokes survive',()=>{
-  for(const t of ['❤️😍','Niiice','Stunningggg omg','uWu','HOTTAAYYYY'])assert.equal(isGeneric(t),true,t);
-  for(const t of ['Pretty as usual 😍','Omggggg so pretty','Kitni sundar ho tum','We should do a swayamvar','Best girl in the best park','Saxy hairs deers.','Mary. Me deer.','What is your life purpose?','Your smile is just so genuine and beautiful❤'])assert.equal(isGeneric(t),false,t);
+  for(const t of ['❤️😍','Niiice','uWu','Woww🔥' ])assert.equal(isGeneric(t),true,t);
+  for(const t of ['Stunningggg omg','HOTTAAYYYY','Beautiful','So pretty','Pretty as usual 😍','Omggggg so pretty','Kitni sundar ho tum','We should do a swayamvar','Best girl in the best park','Saxy hairs deers.','Mary. Me deer.','What is your life purpose?','Your smile is just so genuine and beautiful❤'])assert.equal(isGeneric(t),false,t);
   assert.equal(moodsFor('The caption itself is a separate set of emotions. ❤️').includes('laugh'),false);
 });
 

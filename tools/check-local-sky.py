@@ -11,7 +11,8 @@ with sync_playwright() as p:
         page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
         page.goto('http://127.0.0.1:4317/?debug&renderer=canvas')
         page.wait_for_function('window.__sky?.snapshot().ready')
-        snap=page.evaluate('__sky.snapshot()');assert snap['count']==295 and not snap['sample']
+        assert page.evaluate('''()=>__sky.snapshot().nodes.every(n=>{const c=__sky.original(n.id),owner=r=>r.isOwner||r.is_account_owner||['khushi.o_o','khushi.0_0','khusi.0_0'].includes((r.author||'').trim().replace(/^@/,'').toLowerCase());return !owner(c)&&c.conversation.every(r=>!owner(r))})''')
+        snap=page.evaluate('__sky.snapshot()');assert snap['count']==346 and not snap['sample']
         page.locator('#enter-silent').click();page.wait_for_timeout(900)
         # Use an actual non-overlapped hit target in the existing constellation.
         target=page.evaluate('''()=>__sky.snapshot().nodes.filter(n=>n.point&&n.point.x>80&&n.point.x<innerWidth-80&&n.point.y>110&&n.point.y<innerHeight-120).sort((a,b)=>Math.abs(a.point.x-innerWidth/2)-Math.abs(b.point.x-innerWidth/2))[0]''')
