@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.sites-runtime/
+.impeccable/
+preview.log
+public/data/
+.env
+.env.*
+*.log
