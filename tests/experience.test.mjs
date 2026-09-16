@@ -1,29 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Experience,arrivalPose,revealAt,moodAt,inkLight,firstMoment,validView,calloutPosition,TIMING} from '../src/experience.js';
-import {audioMix,noteFor,SCALE,ObservatorySound} from '../src/sound.js';
+import {audioMix,noteFor,PROGRESSION,midiHz,ObservatorySound} from '../src/sound.js';
 const node=(id,x=0,mask=1)=>Object.freeze({index:Number(id)||0,comment:Object.freeze({id:String(id),author:'a',text:'A whole comment.'}),x,y:0,z:-20,w:100,h:25,font:10,lines:['A whole comment.'],mask});
 test('arrival lighting leaves the source geometry immutable',()=>{
  const n=node(1,500);const before=JSON.stringify(n);
  for(let i=0;i<=100;i++)inkLight(n,{reveal:i/100});assert.equal(JSON.stringify(n),before);
 });
-test('arrival is bounded and ends fully lit at every position',()=>{
- for(const x of [-2500,-1400,-900,0,900,1400,2500]){assert.equal(revealAt(1,x),1);assert.equal(revealAt(0,x),.08);}
+test('arrival is bounded and ends fully lit for every comment identity',()=>{
+ for(const x of [0,1,19,73,100,295,4999]){assert.equal(revealAt(1,x),1);assert.equal(revealAt(0,x),0);}
 });
 test('each complete comment illuminates monotonically',()=>{
  for(const x of [-1100,-400,0,500,1100]){let last=0;for(let i=0;i<=200;i++){const a=revealAt(i/200,x);assert.ok(a>=last);last=a;}}
 });
-test('gathering ends at the exact immutable node and stays finite throughout',()=>{
+test('condensation keeps the exact immutable node and stays finite throughout',()=>{
  const n=node(23,500),before=JSON.stringify(n);
- assert.notEqual(arrivalPose(n,0).x,n.x);
+ assert.equal(arrivalPose(n,0).x,n.x);
  for(let i=0;i<=200;i++){const p=arrivalPose(n,i/200);assert.ok(Object.values(p).every(Number.isFinite));assert.ok(p.scale>=.3&&p.scale<=1);}
  assert.deepEqual(arrivalPose(n,1),{x:n.x,y:n.y,z:n.z,scale:1});assert.equal(JSON.stringify(n),before);
 });
 test('the arrival can be skipped without a delayed timer undoing it',()=>{const e=new Experience();e.tick(.05);e.skip();for(let i=0;i<100;i++)e.tick(.05);assert.equal(e.reveal,1);assert.equal(e.arriving,false);});
 test('reduced motion completes both the arrival and mood transitions immediately',()=>{const e=new Experience();e.setMood(2);e.tick(.016,{immediate:true});assert.equal(e.reveal,1);assert.equal(e.moodBlend,1);});
 test('every completed filter wave has exact, predictable visibility',()=>{
- assert.equal(inkLight(node(1),{mood:1}),1);assert.ok(Math.abs(inkLight(node(1),{mood:2})-.14)<1e-12);
- assert.equal(inkLight(node(1),{mood:0,author:'someone-else'}),.14);
+ assert.equal(inkLight(node(1),{mood:1}),1);assert.ok(Math.abs(inkLight(node(1),{mood:2})-.09)<1e-12);
+ assert.equal(inkLight(node(1),{mood:0,author:'someone-else'}),.09);
 });
 test('mood wave reaches every comment rather than leaving the edge dark',()=>{for(const x of [-1500,0,1500]){assert.equal(moodAt(1,x),1);assert.equal(moodAt(0,x),0);}});
 test('hover waits before adding a label',()=>{const e=new Experience();e.setHover(2);e.tick(.1);assert.equal(e.hoverReady,false);e.tick(.1);assert.equal(e.hoverReady,true);});
@@ -47,18 +47,18 @@ test('callouts use empty space instead of covering the selected comment',()=>{
 test('mobile callouts stay inside safe horizontal bounds',()=>{
  const t={id:1,x:195,y:422,w:210,h:100};const p=calloutPosition(t,[t],{width:390,height:844,labelWidth:240,labelHeight:76});assert.ok(p.x-p.w/2>=20&&p.x+p.w/2<=370);
 });
-test('new sound system is lazy and silent at construction',()=>{const s=new ObservatorySound();assert.equal(s.context,null);assert.equal(s.enabled,false);assert.equal(s.pluck('a'),false);});
-test('every event pitch belongs to the fixed palette',()=>{for(let i=0;i<1000;i++)assert.ok(SCALE.includes(noteFor('word-'+i)));});
+test('new sound system is lazy and silent at construction',()=>{const s=new ObservatorySound();assert.equal(s.context,null);assert.equal(s.enabled,false);assert.equal(s.pendingFocus,null);});
+test('every event pitch belongs to the fixed palette',()=>{for(let i=0;i<1000;i++)assert.ok(PROGRESSION[0].map(midiHz).includes(noteFor('word-'+i)));});
 test('Unicode IDs map to stable pitches',()=>assert.equal(noteFor('तुम👩🏽‍🚀'),noteFor('तुम👩🏽‍🚀')));
 test('disabled sound always has zero output even at full volume',()=>assert.equal(audioMix({volume:1,enabled:false}).master,0));
 test('hidden documents always have zero output',()=>assert.equal(audioMix({volume:1,enabled:true,visible:false}).master,0));
-test('volume is clamped and independent of motion',()=>{assert.equal(audioMix({volume:5,enabled:true}).master,.48);assert.equal(audioMix({volume:-1,enabled:true}).master,0);assert.equal(audioMix({volume:.4,enabled:true,motion:1}).master,audioMix({volume:.4,enabled:true,motion:0}).master);});
+test('volume is clamped and independent of motion',()=>{assert.equal(audioMix({volume:5,enabled:true}).master,.7);assert.equal(audioMix({volume:-1,enabled:true}).master,0);assert.equal(audioMix({volume:.4,enabled:true,motion:1}).master,audioMix({volume:.4,enabled:true,motion:0}).master);});
 test('reading ducks the ambient bed and removes motion noise',()=>{
- const a=audioMix({zoom:7,reading:false,enabled:true,motion:1}),b=audioMix({zoom:7,reading:true,enabled:true,motion:1});assert.ok(Math.abs(b.bed-a.bed*.18)<1e-12);assert.equal(b.air,0);
+ const a=audioMix({zoom:7,reading:false,enabled:true,motion:1}),b=audioMix({zoom:7,reading:true,enabled:true,motion:1});assert.ok(Math.abs(b.bed-a.bed*.34)<1e-12);assert.equal(b.air,0);
 });
 test('notes-only mode removes all sustained ambience, not just most of it',()=>{const m=audioMix({mode:'notes',enabled:true,motion:1});assert.equal(m.bed,0);assert.equal(m.air,0);});
 test('approaching changes sound texture continuously without exceeding its range',()=>{
- let prior=0;for(let z=1;z<100;z+=.25){const m=audioMix({zoom:z});assert.ok(m.cutoff>=prior&&m.cutoff<=1730);prior=m.cutoff;}
+ let prior=0;for(let z=1;z<100;z+=.25){const m=audioMix({zoom:z});assert.ok(m.cutoff>=prior&&m.cutoff<=2000);prior=m.cutoff;}
 });
 test('motion air has a strict gain ceiling',()=>assert.ok(audioMix({motion:1000}).air<=.0671));
 test('disabling uncreated audio remains safe and does not create a context',()=>{const s=new ObservatorySound();s.disable();clearTimeout(s.suspendTimer);assert.equal(s.context,null);assert.equal(s.enabled,false);});

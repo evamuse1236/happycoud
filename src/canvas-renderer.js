@@ -1,4 +1,4 @@
-import { inkLight, arrivalPose, smoothstep } from './experience.js';
+import { inkLight } from './experience.js';
 import { project, random, hash, clamp } from './math.js';
 import { WORD_FONT, LINE_HEIGHT } from './layout.js';
 import { atmosphereFor, nebulaSlices } from './atmosphere.js';
@@ -93,25 +93,19 @@ export class CanvasConstellationRenderer {
         const p=project(source,camera,w,h);
         if(p){
           const matches=this.nodes.filter(n=>n.index!==source.index&&n.comment.author===source.comment.author).sort((a,b)=>Math.hypot(a.x-source.x,a.y-source.y)-Math.hypot(b.x-source.x,b.y-source.y)).slice(0,3);
-          ctx.globalAlpha=.19;ctx.strokeStyle='#acb9ce';ctx.lineWidth=.65;ctx.setLineDash([2,6]);ctx.beginPath();
+          ctx.globalAlpha=.19*(1-(this.readerMix||0));ctx.strokeStyle='#acb9ce';ctx.lineWidth=.65;ctx.setLineDash([2,6]);ctx.beginPath();
           for(const n of matches){const q=project(n,camera,w,h);if(q){ctx.moveTo(p.x,p.y+source.h*p.scale/2+4);ctx.lineTo(q.x,q.y+n.h*q.scale/2+4);}}
           ctx.stroke();ctx.setLineDash([]);
         }
       }
     }
     for(const tile of this.tiles){
-      const n=tile.node,phase=(n.index*.61803398875)%1;
-      const words=smoothstep(.76+phase*.08,1,this.reveal);
-      if(this.reveal<1){
-        const star=project(arrivalPose(n,this.reveal),camera,w,h);
-        if(star){const size=(12+phase*14)*star.scale;ctx.globalAlpha=(1-words)*(.5+.5*smoothstep(0,.12,this.reveal));ctx.drawImage(this.glows[n.mask&4?1:n.mask&1?2:0],star.x-size/2,star.y-size/2,size,size);this.drawCalls++;}
-      }
-      const p=project(n,camera,w,h);if(!p||words===0)continue;
+      const n=tile.node,p=project(n,camera,w,h);if(!p)continue;
       const width=n.w*p.scale,height=n.h*p.scale;
       if(p.x+width/2<0||p.x-width/2>w||p.y+height/2<0||p.y-height/2>h)continue;
       const match=(!this.mood||(n.mask&this.mood))&&(!this.author||n.comment.author===this.author);
       const highlighted=n.index===this.hover||n.index===this.selected;
-      const light=inkLight(n,this)*words;ctx.globalAlpha=light*(highlighted?1:n.luminosity);
+      const light=inkLight(n,this)*(n.index===this.selected?1-(this.readerMix||0):1-.84*(this.readerMix||0));ctx.globalAlpha=light*(highlighted?1:n.luminosity);
       if(highlighted){ctx.shadowColor='rgba(238,209,156,.32)';ctx.shadowBlur=7;}
       const lod=clamp(Math.floor(Math.log2(Math.max(1,tile.canvas.width/(width*this.dpr)))),0,tile.levels.length-1);
       if(n.font*p.scale>=9){

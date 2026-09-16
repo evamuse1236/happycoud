@@ -26,14 +26,5 @@ test('depth-locked dragging retains the grabbed world plane',()=>{const rig=new 
 test('callouts avoid reserved controls as well as the selected text',()=>{const t={id:1,x:600,y:380,w:240,h:100},q={x:600,y:530,w:480,h:130};const p=calloutPosition(t,[t],{width:1200,height:850,reserved:[q]});const overlaps=(a,b)=>Math.abs(a.x-b.x)<(a.w+b.w)/2&&Math.abs(a.y-b.y)<(a.h+b.h)/2;assert.equal(overlaps(p,t),false);assert.equal(overlaps(p,q),false);});
 test('callout placement is stable when the previously chosen space remains good',()=>{const t={id:1,x:600,y:380,w:240,h:100},opts={width:1200,height:850};const p=calloutPosition(t,[t],opts);assert.deepEqual(calloutPosition(t,[t],{...opts,previous:p}),p);});
 test('callout dimensions stay inside narrow phone widths',()=>{const t={id:1,x:140,y:250,w:200,h:90};const p=calloutPosition(t,[t],{width:280,height:600,labelWidth:280});assert.ok(p.x-p.w/2>=22&&p.x+p.w/2<=258);});
-test('a second sound toggle cancels pending consent instead of enabling twice',async()=>{
- let release;class S extends ObservatorySound{build(){this.context={state:'suspended',resume:()=>new Promise(r=>release=r)};}applyMix(){}}
- const a=new S();const pending=a.toggle();assert.equal(a.wanted,true);await a.toggle();assert.equal(a.wanted,false);release();await pending;assert.equal(a.enabled,false);clearTimeout(a.suspendTimer);
-});
-test('failed audio activation leaves the next button press able to retry',async()=>{class S extends ObservatorySound{build(){throw new Error('not allowed');}applyMix(){}}const a=new S();await assert.rejects(a.enable(),/not allowed/);assert.equal(a.wanted,false);assert.equal(a.enabled,false);});
-test('reading hush cancels navigation cues but preserves an intentional kept-note response',()=>{
- const a=new ObservatorySound();a.context={currentTime:1};a.applyMix=()=>{};
- const voice=kind=>({kind,cancelled:false,envelope:{gain:{cancelAndHoldAtTime(){},setTargetAtTime(){}}},oscillators:[{o:{stop(t){this.stopped=t;}}}]});
- const nav=voice('arrival'),kept=voice('keep');a.voices.add(nav);a.voices.add(kept);a.setReading(true);assert.equal(nav.cancelled,true);assert.equal(kept.cancelled,false);assert.equal(nav.oscillators[0].o.stopped,1.065);assert.equal(a.stats.cancelled,1);
-});
-test('silenced navigation cues are not cancelled and counted twice',()=>{const a=new ObservatorySound();a.context={currentTime:1};const v={kind:'arrival',cancelled:false,envelope:{gain:{cancelAndHoldAtTime(){},setTargetAtTime(){}}},oscillators:[]};a.voices.add(v);a.hush();a.hush();assert.equal(a.stats.cancelled,1);});
+// The continuous v5 score has no navigation voices to hush.
+// Consent races and reading mix are exercised against the new engine in sound.test.mjs.

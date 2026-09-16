@@ -11,12 +11,11 @@ export function isOwnerComment(comment, account = 'khushi.o_o') {
     [String(account).toLowerCase(), 'khushi.o_o', 'khusi.0_0'].includes(name);
 }
 export const moodMask = moods => (moods.includes('love') ? 1 : 0) | (moods.includes('laugh') ? 2 : 0) | (moods.includes('poetry') ? 4 : 0);
-/** Preserve wording, explicit IDs, attribution and unknown parent relationships. */
+/** Same reviewed-archive adapter as the audited repository. Original records survive. */
 export function normalizeData(input) {
   let root = Array.isArray(input) ? { comments: input } : input;
   if (!root || !Array.isArray(root.comments)) throw new Error('Choose a JSON object with a comments array, or an array of comments.');
   if (root.comments.length > 5000) throw new Error('A single import is limited to 5,000 comments. Split larger archives before importing.');
-  // The reviewed Instagram export uses snake_case and keeps context separately.
   if (Array.isArray(root.context_replies) && Array.isArray(root.posts)) {
     const dates = new Map(root.posts.map(p => [p.index,p.date_displayed]));
     const adapt = c => ({...c, id:String(c.id), parentId:c.parent_comment_id == null?null:String(c.parent_comment_id),
@@ -28,8 +27,7 @@ export function normalizeData(input) {
       return {...comment, conversation:parent===null?[]:all.filter(r=>r.id===parent||r.parentId===parent)};
     })};
   }
-  const ids = new Set();
-  const comments = [];
+  const ids = new Set(), comments = [];
   for (const [sourceIndex, raw] of root.comments.entries()) {
     if (!raw || typeof raw.text !== 'string' || !raw.text.trim() || isOwnerComment(raw, root.account)) continue;
     if (raw.text.length > 30000) throw new Error('One comment exceeds the 30,000-character safety limit. The original file has not been modified.');
@@ -46,7 +44,6 @@ export function normalizeData(input) {
 }
 export function conversationFor(comment) {
   const rootID = comment.parentId || (!comment.isReply ? comment.id : null);
-  // An orphan reply does not get attached to an unrelated root.
   if (rootID === null) return [];
   const ids = new Set();
   return comment.conversation.filter(r => {
@@ -65,10 +62,9 @@ export async function fetchData(url, timeout = 6500) {
   } finally { clearTimeout(timer); }
 }
 export async function loadData() {
-  // Compatible with the existing happycoud Vite middleware and static snapshot.
   let empty = null;
   for (const url of ['./api/comments', './data/comments.json']) {
-    try { const data = await fetchData(url); if(data.comments.length)return { data, url }; if(!empty)empty={data,url}; } catch { /* Try the static snapshot before showing the local import screen. */ }
+    try { const data = await fetchData(url); if(data.comments.length)return { data, url }; if(!empty)empty={data,url}; } catch { /* Keep both existing loading routes. */ }
   }
   return empty || { data: normalizeData([]), url: null };
 }

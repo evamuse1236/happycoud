@@ -30,50 +30,32 @@ layout(location=3) in vec4 aUV;
 layout(location=4) in vec3 aTint;
 layout(location=5) in vec4 aMeta;
 ${WORLD_PROJECTION}
-uniform int uMood; uniform int uMoodFrom; uniform float uMoodBlend; uniform float uReveal; uniform int uHover; uniform int uSelected;
-uniform ivec4 uDetailIds; uniform int uDetailPass; uniform highp int uArrivalStarPass;
-out vec2 vUV; out vec2 vLocal; out vec3 vTint; out float vAlpha; out float vHighlight;
+uniform int uMood; uniform int uMoodFrom; uniform float uMoodBlend; uniform float uReveal; uniform int uHover; uniform int uSelected; uniform float uReadMix;
+uniform ivec4 uDetailIds; uniform int uDetailPass;
+out vec2 vUV; out vec3 vTint; out float vAlpha; out float vHighlight;
 void main(){
-  vUV=aUV.xy+(aCorner+.5)*aUV.zw;vLocal=aCorner;
+  vUV=aUV.xy+(aCorner+.5)*aUV.zw;
   int mask=int(aMeta.x+.5); int id=int(aMeta.y+.5);
   bool matches=(uMood==0 || (mask & uMood)!=0) && aMeta.w>.5;
   vHighlight=(id==uHover || id==uSelected) ? 1.0 : 0.0;
   vTint=mix(aTint,vec3(1.0,.93,.77),vHighlight*.55);
   bool before=(uMoodFrom==0 || (mask & uMoodFrom)!=0) && aMeta.w>.5;
-  float rank=clamp((aPosition.x+1400.)/2800.,0.,1.);
-  float wave=smoothstep(0.,1.,(uMoodBlend-rank*.38)/.62);
-  float arrival=.08+.92*smoothstep(0.,.8,uReveal);
-  vAlpha=mix(mix(.14,1.,float(before)),mix(.14,1.,float(matches)),wave)*aMeta.z*arrival;
-  float phase=fract(float(id)*.61803398875);
-  float gather=clamp((uReveal-phase*.1)/.72,0.,1.);
-  float settle=gather*gather*(3.-2.*gather);
-  float angle=float(id)*2.39996323+(1.-settle)*.65;
-  float radius=450.+phase*1400.;
-  vec3 scattered=vec3(cos(angle)*radius,sin(angle)*radius*.48,-350.-phase*400.);
-  vec3 position=mix(scattered,aPosition,settle);
-  float words=smoothstep(.76+phase*.08,1.,uReveal);
-  if(uArrivalStarPass==1){
-    vAlpha=(1.-words)*(.5+.5*smoothstep(0.,.12,uReveal));
-    gl_Position=projectWorld(position+vec3(aCorner*vec2(12.+phase*14.),0.));
-  }else{
-    vAlpha*=words;
-    gl_Position=projectWorld(aPosition+vec3(aCorner*aSize,0.));
-  }
-  if(uArrivalStarPass==0 && uDetailPass==0 && any(equal(ivec4(id),uDetailIds)))gl_Position=vec4(4.,4.,4.,1.);
+  float moodT=clamp(uMoodBlend,0.,1.);
+  float wave=moodT*moodT*moodT*(moodT*(moodT*6.-15.)+10.);
+  float phase=float((id*73+19)%101)/101.;
+  float birth=clamp((uReveal-(.08+phase*.36))/.47,0.,1.);
+  float arrival=birth*birth*birth*(birth*(birth*6.-15.)+10.);
+  vAlpha=mix(mix(.09,1.,float(before)),mix(.09,1.,float(matches)),wave)*aMeta.z*arrival;
+  vAlpha *= id==uSelected ? (1.-uReadMix) : (1.-.84*uReadMix);
+  gl_Position=projectWorld(aPosition+vec3(aCorner*aSize,0.0));
+  if(uDetailPass==0 && any(equal(ivec4(id),uDetailIds)))gl_Position=vec4(4.,4.,4.,1.);
 }`;
 const WORD_FRAGMENT=`#version 300 es
 precision highp float;
-uniform sampler2D uMap; uniform vec2 uTexel; uniform highp int uArrivalStarPass;
-in vec2 vUV; in vec2 vLocal; in vec3 vTint; in float vAlpha; in float vHighlight;
+uniform sampler2D uMap; uniform vec2 uTexel;
+in vec2 vUV; in vec3 vTint; in float vAlpha; in float vHighlight;
 out vec4 outColor;
 void main(){
-  if(uArrivalStarPass==1){
-    float r=length(vLocal);
-    float core=exp(-r*r*170.)+exp(-r*r*23.)*.55;
-    float rays=(exp(-abs(vLocal.x)*90.)*exp(-abs(vLocal.y)*7.)+exp(-abs(vLocal.y)*90.)*exp(-abs(vLocal.x)*7.))*.28;
-    float a=(core+rays)*vAlpha*(1.-smoothstep(.35,.5,r));
-    outColor=vec4(vTint,a);return;
-  }
   vec4 ink=texture(uMap,vUV);
   float halo=texture(uMap,vUV+vec2(uTexel.x,0.)).a+texture(uMap,vUV-vec2(uTexel.x,0.)).a+
              texture(uMap,vUV+vec2(0.,uTexel.y)).a+texture(uMap,vUV-vec2(0.,uTexel.y)).a;
@@ -285,9 +267,8 @@ export class ConstellationRenderer {
       this.use(this.starProgram,camera);g.uniform1f(this.loc(this.starProgram,'uTime'),time);g.uniform1f(this.loc(this.starProgram,'uDPR'),this.dpr);
       g.blendFunc(g.SRC_ALPHA,g.ONE);g.bindVertexArray(this.stars.vao);g.drawArrays(g.POINTS,0,this.stars.count);g.blendFunc(g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA);this.drawCalls++;
     }
-    if(this.lines){this.use(this.lineProgram,camera);g.bindVertexArray(this.lines.vao);g.drawArrays(g.LINES,0,this.lines.count);this.drawCalls++;}
-    this.use(this.wordProgram,camera);g.uniform1f(this.loc(this.wordProgram,'uReveal'),this.reveal);g.uniform1i(this.loc(this.wordProgram,'uMoodFrom'),this.moodFrom);g.uniform1f(this.loc(this.wordProgram,'uMoodBlend'),this.moodBlend);g.uniform1i(this.loc(this.wordProgram,'uMood'),this.mood);g.uniform1i(this.loc(this.wordProgram,'uHover'),this.hover);g.uniform1i(this.loc(this.wordProgram,'uSelected'),this.selected);
-    g.uniform1i(this.loc(this.wordProgram,'uArrivalStarPass'),0);
+    if(this.lines&&(this.readerMix||0)<.15){this.use(this.lineProgram,camera);g.bindVertexArray(this.lines.vao);g.drawArrays(g.LINES,0,this.lines.count);this.drawCalls++;}
+    this.use(this.wordProgram,camera);g.uniform1f(this.loc(this.wordProgram,'uReadMix'),this.readerMix||0);g.uniform1f(this.loc(this.wordProgram,'uReveal'),this.reveal);g.uniform1i(this.loc(this.wordProgram,'uMoodFrom'),this.moodFrom);g.uniform1f(this.loc(this.wordProgram,'uMoodBlend'),this.moodBlend);g.uniform1i(this.loc(this.wordProgram,'uMood'),this.mood);g.uniform1i(this.loc(this.wordProgram,'uHover'),this.hover);g.uniform1i(this.loc(this.wordProgram,'uSelected'),this.selected);
     g.uniform4iv(this.loc(this.wordProgram,'uDetailIds'),detailIDs);g.uniform1i(this.loc(this.wordProgram,'uDetailPass'),0);
     g.uniform1i(this.loc(this.wordProgram,'uMap'),0);g.activeTexture(g.TEXTURE0);
     for(const page of this.pages){
@@ -295,11 +276,6 @@ export class ConstellationRenderer {
     }
     g.uniform1i(this.loc(this.wordProgram,'uDetailPass'),1);
     for(const page of detailPages){g.bindTexture(g.TEXTURE_2D,page.texture);g.uniform2f(this.loc(this.wordProgram,'uTexel'),1/page.width,1/page.height);g.bindVertexArray(page.vao);g.drawArraysInstanced(g.TRIANGLE_STRIP,0,4,page.count);this.drawCalls++;}
-    if(this.reveal<1){
-      g.uniform1i(this.loc(this.wordProgram,'uArrivalStarPass'),1);
-      for(const page of this.pages){g.bindVertexArray(page.vao);g.drawArraysInstanced(g.TRIANGLE_STRIP,0,4,page.count);this.drawCalls++;}
-      g.uniform1i(this.loc(this.wordProgram,'uArrivalStarPass'),0);
-    }
     g.bindVertexArray(null);
   }
   dispose(){this.clearWorld();this.gl.deleteBuffer(this.quad);for(const p of [this.wordProgram,this.starProgram,this.cloudProgram,this.lineProgram])this.gl.deleteProgram(p.p);}

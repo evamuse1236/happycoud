@@ -13,3 +13,5 @@ dist-standalone/
 test-results/
 Khushi-Observatory.html
 __pycache__/
+
+dist-cinematic/

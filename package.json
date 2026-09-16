@@ -1,6 +1,6 @@
 {
   "name": "happycoud",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "sync": "node scripts/comments.mjs",
     "build": "npm run sync && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4317 --strictPort",
-    "test": "node --test scripts/comments.test.mjs tests/*.test.mjs",
+    "test": "node --test scripts/comments.test.mjs tests/*.test.mjs tests/cinematic/*.test.mjs",
     "build:standalone": "node tools/build.mjs"
   },
   "dependencies": {
