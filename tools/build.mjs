@@ -18,7 +18,7 @@ for(const name of names){
   imports['hc:'+name]='data:text/javascript;base64,'+Buffer.from(code).toString('base64');
 }
 let html=await fs.readFile(path.join(root,'index.html'),'utf8');
-for (const name of ['style','reader','song']) {
+for (const name of ['style','reader','song','resonance']) {
   const css=await fs.readFile(path.join(root,'src',name+'.css'),'utf8');
   html=html.replace(`<link rel="stylesheet" href="./src/${name}.css">`,`<style>\n${css}\n</style>`);
 }

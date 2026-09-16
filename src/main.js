@@ -12,9 +12,11 @@ import { relatedComments } from './reader-context.js';
 import { installStarCursor } from './star-cursor.js';
 import { sampleData } from './demo.js';
 import { SongExperience } from './song.js';
+import { MemoryScene, memoryDestination } from './memory-scene.js';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const body=document.body,root=document.documentElement;
+const memoryScene=new MemoryScene();
 let storage;try{storage=localStorage;}catch{}
 const memory=new LocalMemory(storage),rig=new CameraRig(innerWidth,innerHeight),audio=new ObservatorySound();
 const motionQuery=matchMedia('(prefers-reduced-motion: reduce)');
@@ -31,12 +33,13 @@ let hover=null,hoverAt=0,hoverPoint=null,noticeTimer=0,whisperTimer=0,entered=fa
 let graphicsFallbackReason=null;
 let shelf='all',resultLimit=80,searchTimer=0,wasZoomed=false,noticeText='';
 const reduced=()=>manualReduced||motionQuery.matches;
-let restoreScore=false;
 const song=new SongExperience({
+  getScene:()=>({layout,rig,renderer,state}),
+  score:audio,
   reduced:()=>reduced()||paused,
   projectComment:id=>{const node=layout.nodes.find(n=>n.comment.id===id);return node?project(node,rig.current,innerWidth,innerHeight):null;},
-  onOpen:()=>{restoreScore=audio.wanted;audio.disable();syncSound();hideWhisper();orbit(false);clearHover();rig.interrupt();operation++;pending=null;selected=null;readingOrigin=null;renderer.selected=-1;phase('sky');},
-  onClose:()=>{if(restoreScore)audio.enable().then(syncSound).catch(e=>notify(e.message));else syncSound();},
+  onOpen:()=>{audio.setPerformance(1);syncSound();hideWhisper();orbit(false);clearHover();rig.interrupt();operation++;pending=null;selected=null;readingOrigin=null;renderer.selected=-1;phase('sky');},
+  onClose:()=>{audio.setPerformance(0);syncSound();},
   announce,
 });
 installStarCursor({reduced});
@@ -143,6 +146,7 @@ function home(){
 }
 
 async function setCollection(input,{url=null,keepPrevious=false}={}){
+  if(song.active)song.close({immediate:true,restoreFocus:false});
   const epoch=++collectionEpoch,normalized=normalizeData(input);
   if(!normalized.comments.length)throw new Error('This file has no received comments to place. The current sky has not been changed.');
   building=true;announce('Preparing the original words.');
@@ -158,7 +162,7 @@ async function setCollection(input,{url=null,keepPrevious=false}={}){
     if(keepPrevious&&data.comments.length)previousData={data,url:sourceURL};
     controls?.dispose();canvas.replaceWith(element);canvas=element;renderer=candidate;candidate=null;
     old?.dispose();data=normalized;layout=nextLayout;sourceURL=url;memory.useCollection(data);song.setCollection(data.sample?[]:data.comments);
-    audio.setMood('all');state.ready=true;state.mood=0;$('#show-everything').hidden=true;state.moodFrom=0;state.moodBlend=1;selected=null;pending=null;history=[];historyIndex=-1;readingOrigin=null;libraryOrigin=null;operation++;
+    audio.setMood('all');body.dataset.skyMood='all';state.ready=true;state.mood=0;$('#show-everything').hidden=true;state.moodFrom=0;state.moodBlend=1;selected=null;pending=null;history=[];historyIndex=-1;readingOrigin=null;libraryOrigin=null;operation++;
     state.readingMix=0;state.transition=null;root.style.setProperty('--reading-mix',0);
     for(const d of $$('dialog[open]'))d.close();
     dust.setLayout(layout);rig.home();rig.tick(0,true);bindControls();
@@ -193,7 +197,7 @@ function approach(node,{fromLibrary=false,retainOrigin=false,fromHistory=false,o
   for(const d of $$('dialog[open]'))d.close();
   orbit(false);hideWhisper();clearHover();finishBirth(true);wasZoomed=true;
   renderer.selected=node.index;
-  const destination=readDestination(node,innerWidth,innerHeight,rig.homeZ);
+  const destination=memoryDestination(node,innerWidth,innerHeight,rig.homeZ,readingScale);
   // One direct, continuous dolly: no pull-back arch, second zoom, or word burst.
   const distance=Math.abs(Math.log(destination.z/rig.current.z));
   rig.flyTo(destination,{duration:clamp(.85+distance*.31,.9,2.15),arc:false});phase('approach');
@@ -202,8 +206,7 @@ function approach(node,{fromLibrary=false,retainOrigin=false,fromHistory=false,o
 function finishApproach(){
   const waiting=pending;pending=null;
   if(!waiting||waiting.token!==operation)return;
-  if(waiting.openOnArrival)showReader(waiting.node,{fromHistory:waiting.fromHistory});
-  else {phase('focused');announce('Click these words again, or press Enter, to read them and the words around them.');}
+  showReader(waiting.node,{fromHistory:waiting.fromHistory});
 }
 function setReadingMix(value){state.readingMix=clamp(value,0,1);root.style.setProperty('--reading-mix',state.readingMix.toFixed(4));}
 function animateMix(to,done,duration=DURATION.dissolve){
@@ -212,10 +215,7 @@ function animateMix(to,done,duration=DURATION.dissolve){
 }
 function syncReaderPositions(){
   if(!$('#reader').open||!selected)return;
-  const p=project(selected,rig.current,innerWidth,innerHeight);
-  const base=clamp((p?.scale||1)*selected.font,20,34),font=base*readingScale;
-  root.style.setProperty('--read-font',font+'px');
-  $('#reader-quote').style.width='100%';
+  memoryScene.place(selected,rig.current,readingScale);
 }
 function renderContext(comment){
   const thread=conversationFor(comment),nearby=relatedComments(comment,data.comments);
@@ -286,7 +286,7 @@ function openSheet(id){
   el.showModal();
   if(id==='library')$('#query').focus({preventScroll:true});
 }
-function closeSheet(el){el.close();if($('#reader').open)$('#thread-open').focus({preventScroll:true});else if(entered)$('#beacon').focus({preventScroll:true});}
+function closeSheet(el){el.close();if($('#reader').open)$('#reader-close').focus({preventScroll:true});else if(entered)$('#beacon').focus({preventScroll:true});}
 function renderResults(){
   const query=$('#query').value.trim().toLocaleLowerCase();
   const found=data.comments.filter(c=>(shelf!=='kept'||memory.kept.has(c.id))&&eligible(c)&&(!query||(c.text+' '+c.author).toLocaleLowerCase().includes(query)));
@@ -339,7 +339,7 @@ $('#keep').addEventListener('click',()=>{if(!selected)return;const kept=memory.t
 $('#copy').addEventListener('click',async()=>{
   if(!selected)return;
   try{await navigator.clipboard.writeText(selected.comment.text);$('#copy').textContent='copied';setTimeout(()=>$('#copy').textContent='copy words',1800);announce('The original wording was copied.');}
-  catch{const selection=getSelection(),range=document.createRange();range.selectNodeContents($('#reader-quote'));selection.removeAllRanges();selection.addRange(range);announce('Text selected. Use your browser’s Copy command.');}
+  catch{const selection=getSelection(),range=document.createRange();range.selectNodeContents($('#reader-quote .memory-original')||$('#reader-quote'));selection.removeAllRanges();selection.addRange(range);announce('Text selected. Use your browser’s Copy command.');}
 });
 $('#thread-open').addEventListener('click',()=>{
   if(!selected)return;const fragment=document.createDocumentFragment();
@@ -350,7 +350,7 @@ $('#shelf-all').addEventListener('click',()=>{shelf='all';resultLimit=80;renderR
 $('#more-results').addEventListener('click',()=>{resultLimit+=80;renderResults();});
 $$('[data-mood]').forEach(el=>el.addEventListener('click',()=>{
   const chosen=MOODS.find(m=>m.id===el.dataset.mood);state.moodFrom=state.mood;state.mood=chosen.bit;state.moodBlend=reduced()?1:0;
-  $$('[data-mood]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mood===chosen.id)));audio.setMood(chosen.id);if($('#feelings').open)closeSheet($('#feelings'));orbit(false);clearHover();$('#beacon').focus({preventScroll:true});
+  $$('[data-mood]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mood===chosen.id)));audio.setMood(chosen.id);body.dataset.skyMood=chosen.id;if($('#feelings').open)closeSheet($('#feelings'));orbit(false);clearHover();$('#beacon').focus({preventScroll:true});
   if(!chosen.bit)home();
   announce(chosen.bit?`${chosen.label}. Matching words are brighter.`:'Every light is visible.');
   if(chosen.bit&&!layout.nodes.some(n=>n.mask&chosen.bit))notify('The archive has no comments with this label. Nothing has been moved or deleted.');
@@ -359,7 +359,7 @@ $('#volume').addEventListener('input',e=>{audio.setVolume(Number(e.target.value)
 $('#score-mode').addEventListener('change',e=>{audio.setMode(e.target.value);memory.write('observatory-sound-mode',audio.mode);});
 $('#reduced').addEventListener('change',e=>{manualReduced=e.target.checked;memory.write('observatory-reduced-motion',manualReduced);syncComfort();if(reduced()){finishBirth(true);rig.tick(0,true);}});
 $('#pause').addEventListener('change',e=>{paused=e.target.checked;memory.write('cinema-paused',paused);syncComfort();if(paused&&state.phase==='birth')finishBirth(true);});
-$('#read-size').addEventListener('input',e=>{readingScale=Number(e.target.value)/100;memory.write('observatory-reading-scale',readingScale);syncComfort();syncReaderPositions();});
+$('#read-size').addEventListener('input',e=>{readingScale=Number(e.target.value)/100;memory.write('observatory-reading-scale',readingScale);syncComfort();if(selected&&$('#reader').open){rig.target=memoryDestination(selected,innerWidth,innerHeight,rig.homeZ,readingScale);rig.tick(0,true);}syncReaderPositions();});
 $('#replay').addEventListener('click',()=>{
   closeSheet($('#comfort'));if(!entered)return;
   operation++;pending=null;selected=null;readingOrigin=null;renderer.selected=-1;rig.home();rig.tick(0,true);dust.setLayout(layout);wasZoomed=false;state.birth=0;state.birthSpeed=1;phase('birth');$('#skip-birth').hidden=false;if(reduced()||paused)finishBirth(true);
@@ -402,7 +402,7 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('resize',()=>{
   const oldHome=rig.homeZ;rig.resize(innerWidth,innerHeight);renderer?.resize();dust.resize();
   if(readingOrigin&&Math.abs(readingOrigin.z-oldHome)<1)readingOrigin.z=rig.homeZ;
-  if($('#reader').open&&selected){const dest=readDestination(selected,innerWidth,innerHeight,rig.homeZ);rig.target=dest;rig.tick(0,true);syncReaderPositions();}
+  if($('#reader').open&&selected){const dest=memoryDestination(selected,innerWidth,innerHeight,rig.homeZ,readingScale);rig.target=dest;rig.tick(0,true);syncReaderPositions();}
   paintMap();clearHover();
 });
 motionQuery.addEventListener('change',()=>{syncComfort();if(reduced()){finishBirth(true);rig.tick(0,true);}});
@@ -414,7 +414,7 @@ function frame(now){
   if(document.hidden){frameTime=0;return;}
   const dt=frameTime?Math.min(.06,(now-frameTime)/1000):0;frameTime=now;
   if(!renderer||building)return;
-  song.setReady(entered&&state.ready&&state.birth>=1&&$('#gate').hidden&&!building);
+  song.setReady(entered&&state.ready&&state.birth>=1&&$('#gate').hidden&&!building&&!modal());
   const begin=performance.now();
   if(!paused&&!reduced())simulationTime+=dt;
   if(state.phase==='birth'){
@@ -430,8 +430,8 @@ function frame(now){
   const delta=Math.hypot(rig.current.x-lastCamera.x,rig.current.y-lastCamera.y)/Math.max(rig.current.z,100)+Math.abs(Math.log(rig.current.z/lastCamera.z));
   motion+=(clamp(delta/Math.max(dt,.016)*.45,0,1)-motion)*(1-Math.exp(-3.5*dt));lastCamera={...rig.current};
   Object.assign(renderer,{reveal:state.birth,mood:state.mood,moodFrom:state.moodFrom,moodBlend:state.moodBlend,readerMix:state.readingMix,exposure:.96});
-  const interval=(paused||reduced())&&!moving&&!state.transition&&state.phase!=='birth'?160:state.phase==='reading'?50:16;
-  if(now-lastPaint>=interval){renderer.render(rig.current,simulationTime);dust.render(rig.current,state.birth,Math.min(.1,(now-lastPaint)/1000),{reduced:reduced()||paused});lastPaint=now;frameCount++;frameCost=performance.now()-begin;}
+  const interval=song.active?16:(paused||reduced())&&!moving&&!state.transition&&state.phase!=='birth'?160:state.phase==='reading'?50:16;
+  if(now-lastPaint>=interval){song.beforeRender(rig.current);renderer.render(rig.current,simulationTime);song.afterRender(rig.current);dust.render(rig.current,state.birth,Math.min(.1,(now-lastPaint)/1000),{reduced:reduced()||paused});lastPaint=now;frameCount++;frameCost=performance.now()-begin;}
   paintHover(now);
   if(now-lastMap>240){paintMap();lastMap=now;}
   if(now-lastAudio>80){audio.update({zoom:rig.homeZ/rig.current.z,motion,reading:$('#reader').open});lastAudio=now;}

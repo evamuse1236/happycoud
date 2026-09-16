@@ -31,7 +31,7 @@ layout(location=4) in vec3 aTint;
 layout(location=5) in vec4 aMeta;
 ${WORLD_PROJECTION}
 uniform int uMood; uniform int uMoodFrom; uniform float uMoodBlend; uniform float uReveal; uniform int uHover; uniform int uSelected; uniform float uReadMix;
-uniform ivec4 uDetailIds; uniform int uDetailPass;
+uniform ivec4 uDetailIds; uniform int uDetailPass; uniform float uPerformanceMix;
 out vec2 vUV; out vec3 vTint; out float vAlpha; out float vHighlight;
 void main(){
   vUV=aUV.xy+(aCorner+.5)*aUV.zw;
@@ -47,6 +47,7 @@ void main(){
   float arrival=birth*birth*birth*(birth*(birth*6.-15.)+10.);
   vAlpha=mix(mix(.09,1.,float(before)),mix(.09,1.,float(matches)),wave)*aMeta.z*arrival;
   vAlpha *= id==uSelected ? (1.-uReadMix) : (1.-.84*uReadMix);
+  vAlpha *= 1.0-uPerformanceMix;
   gl_Position=projectWorld(aPosition+vec3(aCorner*aSize,0.0));
   if(uDetailPass==0 && any(equal(ivec4(id),uDetailIds)))gl_Position=vec4(4.,4.,4.,1.);
 }`;
@@ -268,7 +269,7 @@ export class ConstellationRenderer {
       g.blendFunc(g.SRC_ALPHA,g.ONE);g.bindVertexArray(this.stars.vao);g.drawArrays(g.POINTS,0,this.stars.count);g.blendFunc(g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA);this.drawCalls++;
     }
     if(this.lines&&(this.readerMix||0)<.15){this.use(this.lineProgram,camera);g.bindVertexArray(this.lines.vao);g.drawArrays(g.LINES,0,this.lines.count);this.drawCalls++;}
-    this.use(this.wordProgram,camera);g.uniform1f(this.loc(this.wordProgram,'uReadMix'),this.readerMix||0);g.uniform1f(this.loc(this.wordProgram,'uReveal'),this.reveal);g.uniform1i(this.loc(this.wordProgram,'uMoodFrom'),this.moodFrom);g.uniform1f(this.loc(this.wordProgram,'uMoodBlend'),this.moodBlend);g.uniform1i(this.loc(this.wordProgram,'uMood'),this.mood);g.uniform1i(this.loc(this.wordProgram,'uHover'),this.hover);g.uniform1i(this.loc(this.wordProgram,'uSelected'),this.selected);
+    this.use(this.wordProgram,camera);g.uniform1f(this.loc(this.wordProgram,'uPerformanceMix'),this.performanceMix||0);g.uniform1f(this.loc(this.wordProgram,'uReadMix'),this.readerMix||0);g.uniform1f(this.loc(this.wordProgram,'uReveal'),this.reveal);g.uniform1i(this.loc(this.wordProgram,'uMoodFrom'),this.moodFrom);g.uniform1f(this.loc(this.wordProgram,'uMoodBlend'),this.moodBlend);g.uniform1i(this.loc(this.wordProgram,'uMood'),this.mood);g.uniform1i(this.loc(this.wordProgram,'uHover'),this.hover);g.uniform1i(this.loc(this.wordProgram,'uSelected'),this.selected);
     g.uniform4iv(this.loc(this.wordProgram,'uDetailIds'),detailIDs);g.uniform1i(this.loc(this.wordProgram,'uDetailPass'),0);
     g.uniform1i(this.loc(this.wordProgram,'uMap'),0);g.activeTexture(g.TEXTURE0);
     for(const page of this.pages){

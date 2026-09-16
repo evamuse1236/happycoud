@@ -19,3 +19,7 @@ dist-cinematic/
 # Private song, transcription responses, and lyric-to-comment mapping
 song-work/
 public/media/
+
+# Local upgrade rollback files
+.resonance-backups/
+.resonance-install.json

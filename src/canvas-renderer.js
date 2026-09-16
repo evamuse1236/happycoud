@@ -105,7 +105,7 @@ export class CanvasConstellationRenderer {
       if(p.x+width/2<0||p.x-width/2>w||p.y+height/2<0||p.y-height/2>h)continue;
       const match=(!this.mood||(n.mask&this.mood))&&(!this.author||n.comment.author===this.author);
       const highlighted=n.index===this.hover||n.index===this.selected;
-      const light=inkLight(n,this)*(n.index===this.selected?1-(this.readerMix||0):1-.84*(this.readerMix||0));ctx.globalAlpha=light*(highlighted?1:n.luminosity);
+      const light=inkLight(n,this)*(n.index===this.selected?1-(this.readerMix||0):1-.84*(this.readerMix||0))*(1-(this.performanceMix||0));ctx.globalAlpha=light*(highlighted?1:n.luminosity);
       if(highlighted){ctx.shadowColor='rgba(238,209,156,.32)';ctx.shadowBlur=7;}
       const lod=clamp(Math.floor(Math.log2(Math.max(1,tile.canvas.width/(width*this.dpr)))),0,tile.levels.length-1);
       if(n.font*p.scale>=9){

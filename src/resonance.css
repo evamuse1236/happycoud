@@ -1,0 +1,49 @@
+/* Resonance — extensions of the existing night/ivory/champagne observatory. */
+:root{--resonance-ink:#eee8db;--resonance-muted:#b7bac5;--resonance-gold:#e8cfa3;--resonance-blue:#b7cce8}
+body[data-sky-mood=poetry]{--resonance-gold:#b7cce8}body[data-sky-mood=love]{--resonance-gold:#ead1aa}
+#reader.reader{background:transparent;box-shadow:none;border:0;overflow:hidden}
+#reader.reader::backdrop{background:transparent;backdrop-filter:none}
+#reader .reader-veil{background:radial-gradient(ellipse at 34% 43%,rgba(3,7,14,.07),rgba(3,7,14,.22) 55%,rgba(3,7,14,.38));opacity:var(--reading-mix)}
+#reader .reader-stage{inset:0;display:block;padding:0;overflow:hidden;pointer-events:none;opacity:1}
+#reader .reader-main{position:absolute;left:var(--memory-x);top:var(--memory-y);width:var(--memory-width);max-width:none;transform:none;pointer-events:auto;opacity:var(--reading-mix)}
+#reader #reader-quote{position:static;width:100%;max-width:none;max-height:none;padding:0;margin:0;overflow:visible;font:normal var(--memory-font)/1.32 Georgia,'Times New Roman',serif;text-align:center;color:var(--resonance-ink);white-space:normal;letter-spacing:normal;text-shadow:0 0 26px rgba(232,207,163,.08)}
+#reader .memory-line{display:block;white-space:pre;line-height:1.32}
+#reader .reader-byline{position:static;inset:auto;display:flex;flex-wrap:wrap;margin:24px 0 0;gap:9px;justify-content:center;opacity:1;font-size:11px;letter-spacing:.035em;color:#c3beb5}
+#reader #reader-date{color:#b0b1bb}#reader .byline-star{font-size:15px;color:var(--resonance-gold)}
+#reader .reader-actions{position:static;inset:auto;display:flex;justify-content:center;align-items:center;gap:15px;margin:6px 0 0;opacity:1}
+#reader .reader-actions .control{min-width:44px;min-height:44px}#reader #thread-open{display:none}
+#reader #copy{font-size:11px;letter-spacing:.03em}
+#reader #reader-context{position:absolute;left:63%;top:var(--memory-context-top,25vh);width:calc(31% - 18px);max-width:390px;max-height:calc(100dvh - var(--memory-context-top,25vh) - 100px);padding:0 8px 12px 22px;border:0;background:none;box-shadow:none;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#a7b9cf44 transparent;pointer-events:auto;opacity:var(--reading-mix);mask-image:linear-gradient(to bottom,#000 calc(100% - 20px),transparent)}
+#reader #reader-context section{border:0;padding:0;margin:0 0 38px}
+#reader #reader-context h2{font:italic 16px/1.5 Georgia,serif;letter-spacing:0;text-transform:none;color:#d2cbbd;margin:0 0 23px}
+#reader .context-note{font:11px/1.7 var(--sans);color:#acb4c3;margin:-14px 0 24px;max-width:240px}
+#reader .context-comment{position:relative;display:block;width:100%;border:0;border-radius:0;background:transparent;box-shadow:none;padding:0 0 0 20px;margin:0 0 28px;text-align:start;color:var(--resonance-ink);opacity:1;transform:none}
+#reader .context-comment:before{content:'';position:absolute;left:-1px;top:7px;width:3px;height:3px;border-radius:50%;background:#e1c9a4;box-shadow:0 0 8px #e1c9a43b}
+#reader .context-comment:after{content:'';position:absolute;top:19px;bottom:-15px;left:0;width:1px;background:linear-gradient(#cbb89032,#b7cce815,transparent)}
+#reader .context-comment:last-child:after{display:none}
+#reader .context-comment small{font:10px/1.6 var(--sans);letter-spacing:.06em;color:#b4bece;display:block;margin:0 0 8px;text-transform:none}
+#reader .context-comment p{font:normal clamp(16px,1.45vw,21px)/1.55 Georgia,serif;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;color:#e2ded4;max-height:none;display:block;-webkit-line-clamp:unset}
+#reader button.context-comment{transition:color .3s}#reader button.context-comment:hover p{color:#fff6e4}
+#reader[data-transition=enter] .context-comment{animation:memory-arrive .8s both;animation-delay:calc(.23s + var(--memory-order)*.07s)}
+@keyframes memory-arrive{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+#reader .memory-filaments{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:calc(var(--reading-mix)*.52);fill:none;stroke:#bfb6a1;stroke-width:.65}
+#reader .memory-filaments circle{fill:#e8cfa3;stroke:none}
+#reader[data-length=long] .reader-main{left:7%;top:15%;width:47%;max-height:67dvh;overflow:auto;scrollbar-width:thin;scrollbar-color:#b7cce84d transparent;padding:6px 16px 20px}
+#reader[data-length=long] #reader-quote{font-size:calc(clamp(20px,1.85vw,28px)*var(--reading-scale,1));line-height:1.5;white-space:pre-wrap;text-align:start}
+#reader[data-length=long] .memory-ink{display:none}#reader[data-length=long] .memory-original{position:static!important;clip:auto;width:auto;height:auto;overflow:visible;white-space:pre-wrap;padding:0;margin:0;display:block}
+@media(max-width:959px){
+  #reader .reader-stage{inset:100px 0 85px;overflow:auto;overscroll-behavior:contain;padding:var(--memory-mobile-top,20px) 25px 50px;pointer-events:auto;scrollbar-width:thin;scrollbar-color:#a5b4cb44 transparent}
+  #reader .reader-main,#reader[data-length=long] .reader-main{position:relative;left:auto;top:auto;width:var(--memory-width);max-width:100%;max-height:none;overflow:visible;padding:0;margin:0 auto 42px}
+  #reader .reader-byline{margin-top:22px}#reader .reader-actions{gap:10px}
+  #reader #reader-context{position:relative;left:auto;top:auto;width:100%;max-width:540px;max-height:none;overflow:visible;padding:0 12px 20px;margin:0 auto;mask-image:none}
+  #reader #reader-context h2{font-size:16px;margin-bottom:22px}#reader .context-comment p{font-size:19px}
+  #reader .context-comment{padding-left:21px;margin-bottom:28px}
+  #reader .memory-filaments{display:none}
+  #reader .reader-back{left:18px;top:max(19px,env(safe-area-inset-top))}#reader .reader-prev{left:18px}#reader .reader-next{right:18px}
+  #reader[data-length=long] #reader-quote{font-size:calc(22px*var(--reading-scale,1))}
+}
+@media(prefers-reduced-motion:reduce){#reader .context-comment{animation:none!important;transform:none!important}}
+body[data-motion=reduced] #reader .context-comment,body[data-paused=true] #reader .context-comment{animation:none!important}
+@media(forced-colors:active){#reader{background:Canvas!important}#reader *{color:CanvasText!important}#reader .memory-filaments{display:none}#reader .context-comment:before{background:CanvasText}}
+
+#reader .memory-original{white-space:pre-wrap!important}
