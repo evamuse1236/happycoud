@@ -7,6 +7,7 @@
   <meta name="description" content="A private constellation made from the words people left. One sky, at every distance.">
   <title>Khushi — The Living Sky · IV</title>
   <link rel="stylesheet" href="./src/style.css">
+  <link rel="stylesheet" href="./src/reader.css">
 </head>
 <body data-paper="true">
 <svg class="symbol-library" aria-hidden="true"><defs>
@@ -28,7 +29,7 @@
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14A9 9 0 0 1 10 3a9 9 0 1 0 10 11Z"/></symbol>
 </defs></svg>
 <div id="app" data-state="empty">
-  <canvas id="universe" tabindex="0" role="img" aria-label="Interactive comment constellation. Scroll or pinch to approach. Drag to explore. Use Browse for a keyboard-accessible version." aria-describedby="sky-help"></canvas>
+  <canvas id="universe" tabindex="0" role="img" aria-label="Interactive comment constellation. Click a comment to approach; click it again to open its world. Scroll or pinch to approach. Drag to explore. Use Find a moment for a keyboard-accessible version." aria-describedby="sky-help"></canvas>
   <canvas id="annotations" aria-hidden="true"></canvas>
   <div class="vignette" aria-hidden="true"></div>
   <header class="topbar">
@@ -62,7 +63,7 @@
     <button id="zen-toggle"><svg><use href="#i-moon"/></svg><span>Just me and the sky</span><span class="option-value">F</span></button>
     <button id="energy-toggle" aria-pressed="false"><svg><use href="#i-moon"/></svg><span>Lighter on this device</span><span class="option-value" id="energy-state">Off</span></button>
     <button id="tap-nav-toggle" aria-pressed="false"><svg><use href="#i-home"/></svg><span>Tap-to-move controls</span><span class="option-value" id="tap-nav-state">Off</span></button>
-    <button id="paper-toggle" aria-pressed="true"><svg><use href="#i-bookmark"/></svg><span>Reading surface</span><span class="option-value" id="paper-state">Paper</span></button>
+    <button id="paper-toggle" aria-pressed="true"><svg><use href="#i-bookmark"/></svg><span>Reading light</span><span class="option-value" id="paper-state">Soft</span></button>
     <button id="fullscreen"><svg><use href="#i-expand"/></svg><span>Fill the screen</span></button>
     <div class="menu-divider"></div>
     <button class="import-trigger"><svg><use href="#i-import"/></svg><span>Load a local collection</span></button>
@@ -73,29 +74,25 @@
   </section>
   <button id="author-chip" class="filter-chip" hidden></button>
   <button id="pending-update" class="update-chip" hidden>New moments are ready · Refresh sky</button>
-  <div id="sample-label" class="sample-label" hidden>SAMPLE SKY <span>· not her comments</span></div>
-  <section id="empty" class="empty-state">
+  <section id="empty" class="empty-state" hidden>
     <svg class="empty-star" aria-hidden="true"><use href="#i-star"/></svg>
-    <p class="eyebrow">EVERY WORD HAS A PLACE</p>
-    <div class="arrival-orbit" aria-hidden="true"><span></span><i></i></div>
-    <h1>For the words<br><em>worth keeping.</em></h1>
-    <p>Every joke. Every little kindness.<br>A universe made from the things they left you.</p>
-    <button class="primary-button import-trigger"><svg><use href="#i-import"/></svg>Open her comments</button>
-    <button id="demo-button" class="sample-button">Take a look inside · sample sky <span aria-hidden="true">↗</span></button>
-    <p class="privacy-note">A local JSON file. Nothing leaves this device.<br>The sample is illustrative, not her private collection.</p>
+    <h1>This sky is waiting<br><em>for her words.</em></h1>
+    <p>The local archive could not be found.</p>
+    <button class="primary-button import-trigger"><svg><use href="#i-import"/></svg>Choose the comment archive</button>
+    <p class="privacy-note">Your file stays on this device.</p>
   </section>
-  <section id="loading" class="loading-state" role="status" hidden>
-    <svg aria-hidden="true"><use href="#i-star"/></svg><p id="loading-label">Measuring every little moment…</p>
+  <section id="loading" class="loading-state" role="status">
+    <svg aria-hidden="true"><use href="#i-star"/></svg><p id="loading-label">Gathering her words…</p>
     <progress id="load-progress" max="1" value="0" aria-label="Building the constellation"></progress>
   </section>
   <button id="skip-opening" class="skip-opening" hidden>Skip the arrival <span aria-hidden="true">↗</span></button>
   <section id="entry-invitation" class="entry-invitation" aria-label="An invitation to explore" hidden>
     <p class="eyebrow" id="entry-kicker">A LITTLE UNIVERSE. ALL IN THE WORDS.</p>
-    <p class="entry-line" id="entry-line">From far away, a name.<br>Up close, <em>all the little things.</em></p>
+    <p class="entry-line" id="entry-line">A little closer, <em>and every word is hers to keep.</em></p>
     <div class="entry-actions"><button id="enter-first" class="entry-button">Come closer <svg><use href="#i-arrow"/></svg></button><button id="resume-place" class="text-button" hidden>Back to where I was ↗</button></div>
-    <p class="entry-footnote" id="entry-instruction">Or simply scroll into the words. There’s no wrong way.</p>
+    <p class="entry-footnote" id="entry-instruction">Click to approach. Click again to read.</p>
   </section>
-  <button id="first-read" class="first-read glass" hidden><span class="eyebrow">YOU’RE HERE</span><span>Read this little moment <span aria-hidden="true">↗</span></span></button>
+  <button id="first-read" class="first-read glass" hidden><span class="eyebrow">YOU’RE HERE</span><span>Open these words <span aria-hidden="true">↗</span></span></button>
   <div id="first-zoom-whisper" class="zoom-whisper" hidden>The same words. A little closer.</div>
   <div id="world-chrome" hidden>
     <footer class="bottom-bar">
@@ -130,19 +127,24 @@
   <div id="live-status" class="sr-only" aria-live="polite"></div>
 </div>
 <dialog id="reader" class="reader" aria-labelledby="reader-title">
+  <canvas id="reader-stars" aria-hidden="true"></canvas>
   <div class="reader-top"><span id="reader-title" class="eyebrow">A LITTLE MOMENT</span><div class="reader-tools"><button id="copy-words" class="icon-button" aria-label="Copy the exact original words" title="Copy original words"><svg aria-hidden="true"><use href="#i-copy"/></svg></button><button id="reader-sound" class="icon-button" aria-label="Turn on sound" aria-pressed="false"><svg><use href="#i-sound"/></svg></button><button id="keep-moment" class="icon-button" aria-label="Keep this moment on this device" aria-pressed="false"><svg><use href="#i-bookmark"/></svg></button><button id="reader-close" class="icon-button" aria-label="Close comment and return to your place"><svg><use href="#i-close"/></svg></button></div></div>
   <nav class="reading-route" aria-label="Your reading trail">
     <div class="reading-history"><button id="reader-previous" aria-label="Previous comment in your reading trail" disabled>← <span>Previous</span></button><span id="reading-position" aria-label="Reading trail position"></span><button id="reader-forward" aria-label="Next comment in your reading trail" disabled><span>Next</span> →</button></div>
     <button id="reader-results" hidden>Back to results ↗</button>
   </nav>
   <div class="reader-scroll">
+    <div class="reader-composition"><section class="reader-moment" aria-label="The original comment">
     <div class="reading-caption"><span id="reader-moods" class="reader-moods"></span><div class="type-controls" aria-label="Reading text size"><button id="type-down" aria-label="Smaller reading text">A−</button><button id="type-up" aria-label="Larger reading text">A+</button></div></div>
     <span class="quotation-mark" aria-hidden="true">“</span>
     <blockquote id="quote" dir="auto"></blockquote>
     <div class="signature"><span class="signature-star" aria-hidden="true">✧</span><div><button id="reader-author" class="author-link"></button><p id="reader-date"></p></div></div>
     <a id="reader-source" class="source-link" target="_blank" rel="noopener noreferrer" hidden>View original comment ↗</a>
     <p id="keep-feedback" class="keep-feedback" hidden>Kept here, on this device.</p>
+    </section><aside id="reader-context" aria-label="Around these words">
     <details id="conversation"><summary id="conversation-summary"></summary><div id="replies"></div></details>
+    <section id="related-comments" aria-label="More comments from this post or person"><ul id="related-list"></ul></section>
+    </aside></div>
   </div>
   <footer class="reader-footer"><button id="return-to-sky" class="text-button">← Back to this sky</button><button id="next-moment" class="text-button">Another moment <span aria-hidden="true">↗</span></button></footer>
 </dialog>

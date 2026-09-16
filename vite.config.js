@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import { collectComments } from './scripts/comments.mjs';
 
 export default defineConfig({
+  optimizeDeps: { entries: ['index.html'] },
   plugins:[{
     name:'live-local-comments',
     configureServer(server) {

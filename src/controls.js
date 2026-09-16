@@ -19,10 +19,10 @@ export class NavigationControls {
     canvas.addEventListener('pointerdown',e=>{
       if(isBlocked()||e.button>0||this.pointers.size>=2)return;
       if(!this.pointers.size){this.origin={...rig.current};this.recorded=false;this.plane=getPlane(position(e));}
-      before();canvas.setPointerCapture(e.pointerId);
+      onInteract();canvas.setPointerCapture(e.pointerId);
       this.pointers.set(e.pointerId,position(e));this.lastSample=performance.now();this.speed={x:0,y:0};rig.interrupt();onHover(null);
       if(this.pointers.size===1){this.gesture={...position(e),startX:e.clientX,startY:e.clientY,moved:0};this.suppress=false;}
-      else {this.suppress=true;this.gesture=pinch();this.plane=getPlane(this.gesture);}
+      else {onCancelFocus();this.suppress=true;this.gesture=pinch();this.plane=getPlane(this.gesture);}
       canvas.classList.add('dragging');
     },{signal});
     canvas.addEventListener('pointermove',e=>{
@@ -40,7 +40,7 @@ export class NavigationControls {
         const now=performance.now(),dt=Math.max(.008,(now-this.lastSample)/1000);
         this.speed={x:dx/dt,y:dy/dt};this.lastSample=now;
         this.gesture.moved=(this.gesture.moved||0)+Math.hypot(dx,dy);
-        if(this.gesture.moved>5||this.suppress){if(!this.recorded){onNavigate(this.origin);this.recorded=true;}rig.pan(dx,dy,this.plane);}
+        if(this.gesture.moved>5||this.suppress){if(!this.recorded){onCancelFocus();onNavigate(this.origin);this.recorded=true;}rig.pan(dx,dy,this.plane);}
       }
     },{signal});
     const end=(e,cancelled)=>{

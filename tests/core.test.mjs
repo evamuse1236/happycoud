@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { hash,random,project,unproject,dollyAt,CameraRig,rectanglesOverlap,safeURL } from '../src/math.js';
 import { normalizeData,conversationFor,moodMask } from '../src/data.js';
 import { wrapText,graphemes } from '../src/layout.js';
-import { sampleData } from '../src/demo.js';
+import { sampleData } from './fixtures/sample-data.mjs';
 const near=(a,b,eps=1e-9)=>assert.ok(Math.abs(a-b)<eps,`${a} != ${b}`);
 test('deterministic seeds',()=>{assert.equal(hash('a'),hash('a'));const a=random(100),b=random(100);for(let i=0;i<50;i++)assert.equal(a(),b());});
 test('perspective projection and unprojection are inverses at every depth',()=>{

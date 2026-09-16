@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
+import { isOwnerComment } from '../src/data.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const sourceDir = path.resolve(root, '../instagram-comments-khushi-2026-09-16');
@@ -24,6 +25,9 @@ export function isGeneric(text) {
   const words = plain.split(/\s+/);
   if (/^(wow|wo|ow)+[wi]*$/.test(plain.replace(/\s/g,''))) return true;
   if (/^[a-z]{10,}$/.test(plain) && !/[aeiou].*[aeiou]/.test(plain)) return true;
+  // Keep conversational phrases and fuller compliments. Only brief stock reactions go.
+  if (words.length >= 3 && new Set(words).size >= 2) return false;
+  if (/@[\w.]+/u.test(text) && words.length >= 2) return false;
   return words.every(w => genericWords.has(w));
 }
 
@@ -87,12 +91,47 @@ export function parseSnapshot(record) {
     comments.push({id,author,text,parentId,isReply,postUrl,postDate,
       commentUrl:'https://www.instagram.com'+match[1],
       timeLabel:decode(lines[i+1]?.match(/- time: (.*)/)?.[1] || ''),
-      isOwner:author===owner, generic:isGeneric(text), moods:moodsFor(text)});
+      isOwner:isOwnerComment({author},owner), generic:isGeneric(text), moods:moodsFor(text)});
   }
   return comments;
 }
 
+/** Adapt the reviewed export without re-filtering or rewriting its comments. */
+export function fromReviewedArchive(archive) {
+  if (!Array.isArray(archive.comments) || !Array.isArray(archive.posts)) {
+    throw new Error('The reviewed archive must contain comments and posts arrays.');
+  }
+  const posts = new Map(archive.posts.map(p => [p.index, p]));
+  const convert = c => ({
+    id: String(c.id), text: c.text, author: c.author || '',
+    parentId: c.parent_comment_id == null ? null : String(c.parent_comment_id),
+    isReply: c.is_reply === true, isOwner: isOwnerComment(c, archive.account),
+    commentUrl: c.comment_url || '', postUrl: c.post_url || '',
+    postDate: posts.get(c.post_index)?.date_displayed || '',
+    timeLabel: c.time_displayed || '', moods: moodsFor(c.text),
+  });
+  const all = [...archive.comments, ...(archive.context_replies || [])].map(convert);
+  const comments = archive.comments.filter(c => !isOwnerComment(c, archive.account)).map(c => {
+    const comment = convert(c);
+    const rootID = comment.parentId || (!comment.isReply ? comment.id : null);
+    return {...comment, conversation: rootID === null ? [] : all.filter(r => r.id === rootID || r.parentId === rootID)};
+  });
+  const result = {account: archive.account, comments, postsRead: archive.posts.length,
+    postTotal: archive.posts.length, coverage: archive.coverage,
+    counts: {received: comments.length, context: archive.context_replies?.length || 0},
+    source: 'reviewed-archive', provisional: true,
+    notes: 'Reviewed comments with original wording. Instagram visibility gaps remain; mood tags are provisional.'};
+  result.version = crypto.createHash('sha256').update(JSON.stringify(result)).digest('hex').slice(0,16);
+  return result;
+}
+
 export async function collectComments() {
+  let reviewed=null;
+  try {
+    reviewed=fromReviewedArchive(JSON.parse(await fs.readFile(path.join(sourceDir, 'khushi-comments-filtered.json'), 'utf8')));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
   let files=[];
   try { files=(await fs.readdir(sourceDir)).filter(f=>/^post-\d+\.json$/.test(f)).sort(); } catch {}
   const all=new Map();
@@ -106,17 +145,24 @@ export async function collectComments() {
       postsRead++;
     } catch { /* A file can be mid-write while extraction continues. Retry next refresh. */ }
   }
-  const received=[...all.values()].filter(c=>!c.isOwner && !c.generic);
+  // Preserve reviewed wording and relationships; recover additional real comments from snapshots.
+  const reviewedIDs=new Set(reviewed?.comments.map(c=>c.id)||[]);
+  for(const c of reviewed?.comments||[]){
+    for(const reply of c.conversation)all.set(reply.id,{...all.get(reply.id),...reply});
+    all.set(c.id,{...all.get(c.id),...c});
+  }
+  const received=[...all.values()].filter(c=>!isOwnerComment(c,owner) && (reviewedIDs.has(c.id)||!isGeneric(c.text)));
   const comments=received.map(c=>{
-    const rootId=c.parentId||c.id;
-    const conversation=[...all.values()].filter(r=>r.id===rootId || r.parentId===rootId);
+    const rootId=c.parentId||(!c.isReply?c.id:null);
+    const conversation=rootId===null?[]:[...all.values()].filter(r=>r.id===rootId || r.parentId===rootId);
     return {...c,conversation};
   });
   let postTotal=71;
   try { postTotal=JSON.parse(await fs.readFile(path.join(sourceDir,'post-inventory.json'),'utf8')).length; } catch {}
   const result={account:owner,postsRead,postTotal,comments,
-    counts:{received:comments.length,raw:all.size,filtered:[...all.values()].filter(c=>!c.isOwner && c.generic).length},
-    provisional:true,notes:'Ongoing extraction. Generic filtering and mood tags are provisional. Original wording is preserved. Visual fragments may recur; counts refer to unique comments.'};
+    counts:{received:comments.length,raw:all.size,owner:[...all.values()].filter(c=>isOwnerComment(c,owner)).length,filtered:all.size-comments.length-[...all.values()].filter(c=>isOwnerComment(c,owner)).length},
+    coverage:reviewed?.coverage,source:'reviewed-and-expanded',
+    provisional:true,notes:'Expanded real archive. Brief generic reactions and account-owner comments are excluded from the cloud. Owner replies appear only as conversation context. Mood tags and historical coverage are provisional.'};
   result.version=crypto.createHash('sha256').update(JSON.stringify(result)).digest('hex').slice(0,16);
   return result;
 }

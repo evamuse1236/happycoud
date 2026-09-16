@@ -1,19 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Experience,revealAt,moodAt,inkLight,firstMoment,validView,calloutPosition,TIMING} from '../src/experience.js';
+import {Experience,arrivalPose,revealAt,moodAt,inkLight,firstMoment,validView,calloutPosition,TIMING} from '../src/experience.js';
 import {audioMix,noteFor,SCALE,ObservatorySound} from '../src/sound.js';
 const node=(id,x=0,mask=1)=>Object.freeze({index:Number(id)||0,comment:Object.freeze({id:String(id),author:'a',text:'A whole comment.'}),x,y:0,z:-20,w:100,h:25,font:10,lines:['A whole comment.'],mask});
-test('arrival changes only ink, never requires another geometry or a camera',()=>{
+test('arrival lighting leaves the source geometry immutable',()=>{
  const n=node(1,500);const before=JSON.stringify(n);
  for(let i=0;i<=100;i++)inkLight(n,{reveal:i/100});assert.equal(JSON.stringify(n),before);
 });
 test('arrival is bounded and ends fully lit at every position',()=>{
- for(const x of [-2500,-1400,-900,0,900,1400,2500]){assert.equal(revealAt(1,x),1);assert.equal(revealAt(0,x),.045);}
+ for(const x of [-2500,-1400,-900,0,900,1400,2500]){assert.equal(revealAt(1,x),1);assert.equal(revealAt(0,x),.08);}
 });
 test('each complete comment illuminates monotonically',()=>{
  for(const x of [-1100,-400,0,500,1100]){let last=0;for(let i=0;i<=200;i++){const a=revealAt(i/200,x);assert.ok(a>=last);last=a;}}
 });
-test('the opening travels through the fixed field rather than teleporting text',()=>assert.ok(revealAt(.4,-1000)>revealAt(.4,1000)));
+test('gathering ends at the exact immutable node and stays finite throughout',()=>{
+ const n=node(23,500),before=JSON.stringify(n);
+ assert.notEqual(arrivalPose(n,0).x,n.x);
+ for(let i=0;i<=200;i++){const p=arrivalPose(n,i/200);assert.ok(Object.values(p).every(Number.isFinite));assert.ok(p.scale>=.3&&p.scale<=1);}
+ assert.deepEqual(arrivalPose(n,1),{x:n.x,y:n.y,z:n.z,scale:1});assert.equal(JSON.stringify(n),before);
+});
 test('the arrival can be skipped without a delayed timer undoing it',()=>{const e=new Experience();e.tick(.05);e.skip();for(let i=0;i<100;i++)e.tick(.05);assert.equal(e.reveal,1);assert.equal(e.arriving,false);});
 test('reduced motion completes both the arrival and mood transitions immediately',()=>{const e=new Experience();e.setMood(2);e.tick(.016,{immediate:true});assert.equal(e.reveal,1);assert.equal(e.moodBlend,1);});
 test('every completed filter wave has exact, predictable visibility',()=>{

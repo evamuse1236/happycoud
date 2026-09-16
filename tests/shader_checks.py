@@ -26,5 +26,5 @@ for name,pair in shaders.items():
  for shader in stages:delete(shader)
  deleteProgram(program)
 assert gl('glGetError',U,[])()==0
-(root/'docs').mkdir(exist_ok=True);(root/'docs/shader-report.json').write_text(json.dumps(report,indent=2)+'\n')
+(root/'test-results').mkdir(exist_ok=True);(root/'test-results/shader-report.json').write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2));e.eglTerminate(D)

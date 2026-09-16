@@ -1,11 +1,23 @@
 import { clamp, hash, easeInOut } from './math.js';
 
 /** Choreography lives outside the immutable geometry. All progress is in seconds. */
-export const TIMING = Object.freeze({ arrival: 3.1, hover: .18, hoverNote: .48, mood: 1.05, echo: 1.55 });
+export const TIMING = Object.freeze({ arrival: 5.8, hover: .18, hoverNote: .48, mood: 1.05, echo: 1.55 });
 export const smoothstep = (a,b,x) => { const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+/** A temporary orbit gathers each real comment into its final immutable position. */
+export function arrivalPose(node, progress=1) {
+  if(progress>=1)return {x:node.x,y:node.y,z:node.z,scale:1};
+  const phase=(node.index*.61803398875)%1;
+  const t=clamp((progress-phase*.1)/.72,0,1);
+  const settle=t*t*(3-2*t);
+  const angle=node.index*2.39996323+(1-settle)*.65;
+  const radius=450+phase*1400;
+  const scattered={x:Math.cos(angle)*radius,y:Math.sin(angle)*radius*.48,z:-350-phase*400};
+  return {x:scattered.x+(node.x-scattered.x)*settle,
+    y:scattered.y+(node.y-scattered.y)*settle,
+    z:scattered.z+(node.z-scattered.z)*settle,scale:.3+.7*settle};
+}
 export function revealAt(progress,x) {
-  const delay=clamp((x+1400)/2800,0,1)*.52;
-  return .045+.955*smoothstep(0,1,(progress-delay)/.48);
+  return .08+.92*smoothstep(0,.8,progress);
 }
 export function moodAt(progress,x) { return smoothstep(0,1,(progress-clamp((x+1400)/2800,0,1)*.38)/.62); }
 export function inkLight(node,{reveal=1,mood=0,moodFrom=mood,moodBlend=1,author=null}={}) {
