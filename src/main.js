@@ -11,8 +11,9 @@ import { LocalMemory } from './journey.js';
 import { relatedComments } from './reader-context.js';
 import { installStarCursor } from './star-cursor.js';
 import { sampleData } from './demo.js';
-import { SongExperience } from './song.js';
-import { MemoryScene, memoryDestination } from './memory-scene.js';
+import { SongExperience } from './starlight/song.js';
+import { arrivalAction } from './starlight/core.js';
+import { MemoryScene, memoryDestination } from './starlight/memory-scene.js';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const body=document.body,root=document.documentElement;
@@ -33,13 +34,14 @@ let hover=null,hoverAt=0,hoverPoint=null,noticeTimer=0,whisperTimer=0,entered=fa
 let graphicsFallbackReason=null;
 let shelf='all',resultLimit=80,searchTimer=0,wasZoomed=false,noticeText='';
 const reduced=()=>manualReduced||motionQuery.matches;
+let songReturn=null;
 const song=new SongExperience({
   getScene:()=>({layout,rig,renderer,state}),
   score:audio,
   reduced:()=>reduced()||paused,
   projectComment:id=>{const node=layout.nodes.find(n=>n.comment.id===id);return node?project(node,rig.current,innerWidth,innerHeight):null;},
-  onOpen:()=>{audio.setPerformance(1);syncSound();hideWhisper();orbit(false);clearHover();rig.interrupt();operation++;pending=null;selected=null;readingOrigin=null;renderer.selected=-1;phase('sky');},
-  onClose:()=>{audio.setPerformance(0);syncSound();},
+  onOpen:()=>{songReturn={selected,readingOrigin,phase:state.phase};audio.setPerformance(1);syncSound();hideWhisper();orbit(false);clearHover();rig.interrupt();operation++;pending=null;selected=null;readingOrigin=null;renderer.selected=-1;phase('sky');},
+  onClose:()=>{audio.setPerformance(0);syncSound();if(songReturn?.selected&&songReturn.phase==='focused'){selected=songReturn.selected;readingOrigin=songReturn.readingOrigin;renderer.selected=selected.index;phase('focused');memoryScene.focus(selected,rig.current);}songReturn=null;},
   announce,
 });
 installStarCursor({reduced});
@@ -52,7 +54,7 @@ function notify(text){
   if(top){const note=document.createElement('p');note.className='modal-notice';note.setAttribute('role','status');note.textContent=text;top.append(note);}
   noticeTimer=setTimeout(()=>{$('#notice').hidden=true;$$('.modal-notice').forEach(el=>el.remove());},4800);announce(text);
 }
-function phase(name){state.phase=name;body.dataset.scene=name;}
+function phase(name){state.phase=name;body.dataset.scene=name;if(name!=='focused')memoryScene.clearFocus();}
 function syncSound(){
   const on=audio.wanted;body.dataset.sound=on?'on':'off';
   for(const el of [$('#sound'),$('#reader-sound')])if(el){el.setAttribute('aria-pressed',String(on));el.setAttribute('aria-label',on?'Mute the score':'Turn on the score');}
@@ -191,6 +193,7 @@ function approach(node,{fromLibrary=false,retainOrigin=false,fromHistory=false,o
   if(!node||building||!entered)return;
   if($('#reader').open){closeReader({next:node,fromHistory});return;}
   if(selected?.comment.id===node.comment.id && state.phase==='focused'){showReader(node,{fromHistory});return;}
+  if(pending?.node.comment.id===node.comment.id&&state.phase==='approach'){pending.openOnArrival=true;return;}
   if(!readingOrigin)readingOrigin={...rig.current};
   const token=++operation;pending={node,token,fromHistory,openOnArrival:openOnArrival||fromLibrary};selected=node;
   if(!fromLibrary)libraryOrigin=null;
@@ -206,7 +209,9 @@ function approach(node,{fromLibrary=false,retainOrigin=false,fromHistory=false,o
 function finishApproach(){
   const waiting=pending;pending=null;
   if(!waiting||waiting.token!==operation)return;
-  showReader(waiting.node,{fromHistory:waiting.fromHistory});
+  if(arrivalAction(waiting)==='read'){showReader(waiting.node,{fromHistory:waiting.fromHistory});return;}
+  phase('focused');memoryScene.focus(waiting.node,rig.current);
+  announce('You are closer. Touch this comment again, or press Enter, to hear the voices around it.');
 }
 function setReadingMix(value){state.readingMix=clamp(value,0,1);root.style.setProperty('--reading-mix',state.readingMix.toFixed(4));}
 function animateMix(to,done,duration=DURATION.dissolve){
@@ -253,11 +258,11 @@ function showReader(node,{fromHistory=false}={}){
   if(!$('#reader').open)$('#reader').showModal();
   syncReaderPositions();$('#reader-close').focus({preventScroll:true});
   phase('reading');audio.update({reading:true});audio.focus(c.id,0);
-  animateMix(1,()=>{$('#reader').dataset.transition='open';});
+  animateMix(1,()=>{$('#reader').dataset.transition='open';},.78);
   announce(`A comment${c.author?' from '+c.author:''}.`);
 }
 function closeReader({next=null,home:goHome=false,results=false,fromHistory=false}={}){
-  if(!$('#reader').open)return;
+  if(!$('#reader').open||$('#reader').dataset.transition==='leave')return;
   state.transition=null;$('#reader').dataset.transition='leave';operation++;pending=null;
   const origin=readingOrigin?{...readingOrigin}:{x:0,y:0,z:rig.homeZ};
   audio.update({reading:false});
@@ -265,6 +270,7 @@ function closeReader({next=null,home:goHome=false,results=false,fromHistory=fals
     $('#reader').close();renderer.selected=-1;phase('sky');
     if(results&&libraryOrigin){const saved=libraryOrigin;openSheet('library');$('#query').value=saved.query;shelf=saved.shelf;renderResults();$('#library').scrollTop=saved.scroll;selected=null;readingOrigin=null;return;}
     if(next){approach(next,{retainOrigin:true,fromLibrary:!!libraryOrigin,fromHistory,openOnArrival:true});return;}
+    if(!goHome&&!results&&selected){renderer.selected=selected.index;phase('focused');memoryScene.focus(selected,rig.current);canvas.focus({preventScroll:true});return;}
     selected=null;libraryOrigin=null;readingOrigin=null;
     rig.flyTo(goHome?{x:0,y:0,z:rig.homeZ}:origin,{duration:DURATION.return,arc:false});phase('returning');
     if(reduced())rig.tick(0,true);
@@ -377,7 +383,7 @@ window.addEventListener('keydown',e=>{
     if(modal()){e.preventDefault();const top=$$('dialog[open]').at(-1);if(top.id==='reader')closeReader();else closeSheet(top);return;}
     if(!$('#orbit').hidden){orbit(false);$('#beacon').focus();return;}
     if(state.phase==='birth'){e.preventDefault();finishBirth(false);return;}
-    if(pending||selected){operation++;pending=null;selected=null;readingOrigin=null;rig.interrupt();phase('sky');renderer.selected=-1;return;}
+    if(pending||selected){const origin=readingOrigin?{...readingOrigin}:{x:0,y:0,z:rig.homeZ};operation++;pending=null;selected=null;readingOrigin=null;rig.interrupt();renderer.selected=-1;rig.flyTo(origin,{duration:DURATION.return,arc:false});phase('returning');if(reduced())rig.tick(0,true);return;}
     return;
   }
   if(input||e.ctrlKey||e.metaKey||e.altKey)return;

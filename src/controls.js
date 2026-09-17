@@ -17,10 +17,14 @@ export class NavigationControls {
       rig.zoom(Math.exp(clamp(delta,-160,160)*(e.ctrlKey?.007:.0026)),e.clientX,e.clientY,this.wheelPlane);
     },{passive:false,signal});
     canvas.addEventListener('pointerdown',e=>{
-      if(isBlocked()||e.button>0||this.pointers.size>=2)return;
+      if(isBlocked()||e.button>0)return;
+      // Mouse gestures cannot contain multiple pointers. Recover a missed release
+      // after focus changes instead of treating the next drag as a pinch.
+      if(e.pointerType==='mouse'){this.pointers.clear();this.gesture=null;this.suppress=false;}
+      if(this.pointers.size>=2)return;
       if(!this.pointers.size){this.origin={...rig.current};this.recorded=false;this.plane=getPlane(position(e));}
       onInteract();canvas.setPointerCapture(e.pointerId);
-      this.pointers.set(e.pointerId,position(e));this.lastSample=performance.now();this.speed={x:0,y:0};rig.interrupt();onHover(null);
+      this.pointers.set(e.pointerId,position(e));this.lastSample=performance.now();this.speed={x:0,y:0};onHover(null);
       if(this.pointers.size===1){this.gesture={...position(e),startX:e.clientX,startY:e.clientY,moved:0};this.suppress=false;}
       else {onCancelFocus();this.suppress=true;this.gesture=pinch();this.plane=getPlane(this.gesture);}
       canvas.classList.add('dragging');
@@ -28,6 +32,7 @@ export class NavigationControls {
     canvas.addEventListener('pointermove',e=>{
       if(isBlocked())return;
       if(!this.pointers.has(e.pointerId)){if(e.pointerType!=='touch')onHover(position(e));return;}
+      if(e.pointerType==='mouse'&&e.buttons===0){end(e,true);return;}
       const prev=this.pointers.get(e.pointerId);this.pointers.set(e.pointerId,position(e));
       if(this.pointers.size>=2){
         const next=pinch(),old=this.gesture;
@@ -57,6 +62,7 @@ export class NavigationControls {
     canvas.addEventListener('pointerup',e=>end(e,false),{signal});
     canvas.addEventListener('pointercancel',e=>end(e,true),{signal});
     canvas.addEventListener('lostpointercapture',e=>end(e,true),{signal});
+    globalThis.addEventListener?.('blur',()=>{this.pointers.clear();this.gesture=null;this.suppress=false;canvas.classList.remove('dragging');rig.interrupt();},{signal});
     canvas.addEventListener('pointerleave',()=>{if(!this.pointers.size)onHover(null);},{signal});
     // Single-tap selection is already the approach gesture. A second click must
     // not race the reader by starting an unrelated dolly.

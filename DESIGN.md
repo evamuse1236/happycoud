@@ -11,3 +11,10 @@ The opt-in procedural piano and sustained harmonic score continues through navig
 Visual reference: the user's Downloads/happycoud-cinematic-v5-source.zip. Preserve its spacious composition, starlight palette, restrained controls, full original words, continuous scene, and attention-based sound. Its glow is intentional lighting, not a generic decoration to remove.
 
 When a feeling is active, a quiet Show everything control remains beside the edge light. It clears the feeling and returns to the whole sky. Fine-pointer devices use a white-hot point with a soft stellar halo and a short fading dust trail. Clickable targets make its light pulse slowly. The point follows the pointer exactly; only the trail lingers. Reduced motion removes the trail and pulse. Selectable text retains its normal cursor.
+
+
+## Starlight song player
+
+The song inherits the sky, warm serif lyrics, and quiet transport. Related originals remain selectable on the left, above on phones. Entering the song fades unrelated comments and brings an original into the reading plane. The lower-left pulsing star opens the player without an explanatory caption.
+
+The audio clock owns every landing. The star contacts measured glyph tops, accelerates downward into a brief compression, and lights that word. KHUSHI is visited letter by letter using display subdivisions of its recorded interval. Wrapped rows reserve a clear gap: the star rounds the right edge before returning above the next row, and subsequent hops cannot rise into the earlier sentence. It remains present between phrases. Lyrics dissolve upward as the next phrase settles from below in a stable frame. Seeking settles immediately; reduced motion removes travel and elastic motion.

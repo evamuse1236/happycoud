@@ -10,15 +10,29 @@ await fs.cp(path.join(root,'src'),path.join(dist,'src'),{recursive:true});
 await fs.copyFile(path.join(root,'index.html'),path.join(dist,'index.html'));
 try{await fs.cp(path.join(root,'public'),dist,{recursive:true});}catch{}
 // Offline single file. Local real data is included only in this ignored build output.
-const names=(await fs.readdir(path.join(root,'src'))).filter(n=>n.endsWith('.js')).map(n=>n.slice(0,-3));
+// Include nested upgrade modules without changing the private-data embedding below.
+async function modulesIn(directory,prefix=''){
+  const out=[];
+  for(const entry of await fs.readdir(directory,{withFileTypes:true})){
+    const name=prefix+entry.name;
+    if(entry.isDirectory())out.push(...await modulesIn(path.join(directory,entry.name),name+'/'));
+    else if(entry.isFile()&&name.endsWith('.js'))out.push(name.slice(0,-3));
+  }
+  return out;
+}
+const names=await modulesIn(path.join(root,'src'));
 const imports={};
 for(const name of names){
   let code=await fs.readFile(path.join(root,'src',name+'.js'),'utf8');
-  code=code.replace(/from\s+(['"])\.\/([^'"]+)\1/g,(_all,_q,file)=>`from 'hc:${file.replace(/\.js$/,'')}'`);
+  code=code.replace(/from\s+(['"])(\.\.?\/[^'"]+)\1/g,(_all,_q,file)=>{
+    const target=path.posix.normalize(path.posix.join(path.posix.dirname(name),file)).replace(/\.js$/,'');
+    if(!names.includes(target))throw new Error('Unresolved standalone module: '+name+' -> '+file);
+    return `from 'hc:${target}'`;
+  });
   imports['hc:'+name]='data:text/javascript;base64,'+Buffer.from(code).toString('base64');
 }
 let html=await fs.readFile(path.join(root,'index.html'),'utf8');
-for (const name of ['style','reader','song','resonance']) {
+for (const name of ['style','reader','song','resonance','starlight/starlight']) {
   const css=await fs.readFile(path.join(root,'src',name+'.css'),'utf8');
   html=html.replace(`<link rel="stylesheet" href="./src/${name}.css">`,`<style>\n${css}\n</style>`);
 }

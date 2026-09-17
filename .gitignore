@@ -23,3 +23,6 @@ public/media/
 # Local upgrade rollback files
 .resonance-backups/
 .resonance-install.json
+
+.starlight-backups/
+.starlight-install.lock
