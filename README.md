@@ -39,7 +39,7 @@ Open the edge light to choose **Feeling loved**, **Make me laugh**, or **A littl
 
 ## The song in the clouds
 
-After entering and letting the cloud form, the small radar at bottom left gathers the song's source comments. The recording starts after their arrival. Original comments retain their wording and attribution; their sung words light up in warm starlight. Additional lyric words appear in blue as they are sung. Pause, seek, mute, replay, and return to the sky are available; Escape returns and Space pauses when focus is on the lyrics. The ambient score pauses for the song and returns only if it was enabled beforehand. Hiding the page pauses the recording.
+After entering and letting the cloud form, **a lost signal** at the bottom centre connects to the song's source comments. Verified fragments lift from an original into the lyrics, then the recording starts from its beginning. Original comments retain their wording and attribution; their sung words light up in warm starlight. Additional lyric words appear in blue as they are sung. Pause, seek, mute, replay, and return to the sky are available; Escape returns and Space pauses when focus is on the lyrics. The ambient score pauses for the song and returns only if it was enabled beforehand. Hiding the page pauses the recording.
 
 The local song is prepared from `song-work/lyric-matches.json` and the MAI transcript. To refresh its ignored playback assets after reviewing that mapping:
 
@@ -61,7 +61,7 @@ python tools/browser-checks.py --canvas
 python tools/check-local-sky.py
 python tools/check-mood-score.py
 python tools/check-score-render.py
-python tools/check-song.py
+python tools/check-lost-signal.py
 ```
 
 Reports and screenshots stay under ignored `test-results/`. The portable source-only build is `node tools/build-cinematic.mjs`; it produces `dist-cinematic/Khushi-Cinematic-Sky.html` without private data. Legacy `immersion.js` and `reader.css` are retained for reference but are not loaded by the cinematic application.

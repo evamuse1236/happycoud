@@ -26,6 +26,7 @@ export function installStarCursor({reduced=()=>false}={}) {
   };
   function paint(now){
     raf=0;if(!visible)return;
+    if(document.body.dataset.starlight==='on'){hide();return;}
     const target=document.elementFromPoint(x,y);
     const clickable=!!target?.closest('button:not(:disabled),a[href],summary,select,input[type="checkbox"],input[type="range"],#universe.pointing');
     const text=!clickable&&!!target?.closest('input,textarea,[contenteditable="true"],#reader-quote,article.context-comment');
