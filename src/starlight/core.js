@@ -108,13 +108,15 @@ export function mediaDuration(recording, model, manifest) {
 }
 
 /** One forward-only sequence of hops. Held words remain a visible landing. */
-export function bounceCue(records, time, entryTime = -Infinity) {
+export function bounceCue(records, time, entryTime = -Infinity, flightTime = .48) {
   if (!records.length) return null;
   let landed = -1;
   for (let i=0;i<records.length;i++) { if(records[i].word.start<=time)landed=i; else break; }
   const next=records[landed+1], previous=records[landed];
   if(next) {
-    const start=previous ? Math.max(previous.word.start+.045,next.word.start-.48) : Math.max(entryTime,next.word.start-.48);
+    const flight=typeof flightTime==='function'?flightTime(previous,next):flightTime;
+    const contact=previous?Math.min(.085,(next.word.start-previous.word.start)*.2):0;
+    const start=previous ? Math.max(previous.word.start+contact,next.word.start-flight) : Math.max(entryTime,next.word.start-flight);
     if(time>=start && next.word.start>start) return {record:next,previous,phase:'flight',duration:next.word.start-start,progress:clamp((time-start)/(next.word.start-start))};
   }
   if(!previous)return {record:records[0],previous:null,phase:'flight',progress:0};
@@ -133,6 +135,13 @@ export function lyricBeats(records) {
 }
 export function lyricDisplayIndex(phrases,time) {
   const current=Math.max(0,phraseIndex(phrases,time)),next=phrases[current+1];
-  if(next && time>=Math.max(phrases[current].end+.02,next.start-.42))return current+1;
+  const last=phrases[current]?.records?.at(-1)?.word;
+  if(next && time>=Math.max((last?.start ?? phrases[current].end)+.1,next.start-.56))return current+1;
   return current;
+}
+
+/** Hold the original that gathered into the room throughout the spoken intro. */
+export function phraseSource(phrases,index,openingId) {
+  const first=phrases.findIndex(p=>p.sourceIds.length);
+  return {id:phrases[index]?.sourceIds[0] || (index<first?openingId:null),opening:index<first};
 }

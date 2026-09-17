@@ -83,3 +83,32 @@ test('the star returns above a new phrase without rising through its letters', a
     assert.ok(at.x+7<=row.left || at.x-7>=row.right || at.y+7<=row.top || at.y-7>=row.bottom, `phrase handoff crosses letters at ${p}`);
   }
 });
+
+test('word hops have constant downward acceleration and exact contact times', async () => {
+  const { makeBouncePath, STAR_GRAVITY }=await import('../src/starlight/courier.js');
+  const from={x:100,y:200},to={x:200,y:200},duration=.4,path=makeBouncePath(from,to,duration),dt=.001;
+  assert.deepEqual(path(0),from);assert.deepEqual(path(1),to);
+  for(const time of [.05,.1,.2,.3]) {
+    const a=path((time-dt)/duration),b=path(time/duration),c=path((time+dt)/duration);
+    assert.ok(Math.abs((c.y-2*b.y+a.y)/(dt*dt)-STAR_GRAVITY)<.001);
+  }
+});
+test('row returns carry speed through curve boundaries without intermediate stops', async () => {
+  const { makeBouncePath }=await import('../src/starlight/courier.js');
+  const row={top:200,bottom:256,left:100,right:800,ceiling:140};
+  const next={top:298,bottom:354,left:330,right:520,ceiling:267};
+  const path=makeBouncePath({x:770,y:192,row},{x:370,y:290,row:next},.6);
+  const speeds=[];
+  for(let i=101;i<900;i++){const a=path((i-1)/1000),b=path(i/1000);speeds.push(Math.hypot(b.x-a.x,b.y-a.y));}
+  const max=Math.max(...speeds);
+  for(let i=1;i<speeds.length;i++)assert.ok(Math.abs(speeds[i]-speeds[i-1])<max*.08);
+  assert.ok(Math.min(...speeds)>max*.08);
+});
+test('the gathered original persists through the intro until source lyrics begin', async () => {
+  const { phraseSource }=await import('../src/starlight/core.js');
+  const phrases=[{sourceIds:[]},{sourceIds:[]},{sourceIds:[]},{sourceIds:[]},{sourceIds:['opening']},{sourceIds:['next']},{sourceIds:[]}];
+  for(let i=0;i<4;i++)assert.deepEqual(phraseSource(phrases,i,'opening'),{id:'opening',opening:true});
+  assert.deepEqual(phraseSource(phrases,4,'opening'),{id:'opening',opening:false});
+  assert.deepEqual(phraseSource(phrases,5,'opening'),{id:'next',opening:false});
+  assert.equal(phraseSource(phrases,6,'opening').id,null);
+});

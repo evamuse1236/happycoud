@@ -1,10 +1,13 @@
-import { clamp, mix, smooth, project, prepareSong, lyricSegments, sourceSegments, bounceCue, lyricBeats, lyricDisplayIndex, timeLabel, mediaDuration } from './core.js';
+import { clamp, mix, smooth, project, prepareSong, lyricSegments, sourceSegments, bounceCue, lyricBeats, lyricDisplayIndex, phraseSource, timeLabel, mediaDuration } from './core.js';
 import { SourceBridge } from './bridge.js';
-import { Courier } from './courier.js';
+import { Courier, hopDuration } from './courier.js';
 
 const STAR = '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3c0 12-5 17-17 17 12 0 17 5 17 17 0-12 5-17 17-17-12 0-17-5-17-17Z"/></svg>';
 const BACK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m7-7-7 7 7 7"/></svg>';
 const PLAY = '<svg viewBox="0 0 32 32" aria-hidden="true"><path class="sl-play-mark" d="m12 7 14 9-14 9Z"/><path class="sl-pause-mark" d="M12 8v16M21 8v16"/></svg>';
+const ORBITS = '<svg class="sl-play-orbits" viewBox="0 0 100 100" aria-hidden="true"><g class="sl-orbit-track"><ellipse cx="50" cy="50" rx="46" ry="30" transform="rotate(-32 50 50)"/><path d="M14 34a43 43 0 0 1 71 43"/><circle class="sl-orbit-satellite" cx="14" cy="34" r="2"/><circle class="sl-orbit-satellite" cx="85" cy="77" r="1.3"/></g></svg>';
+const RESTART = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9 10a10 10 0 1 1-2 11M4 9l5 1 1-5"/><path class="sl-control-star" d="M18 7q0 5-5 5 5 0 5 5 0-5 5-5-5 0-5-5Z"/></svg>';
+const LYRICS = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="m6 23 7-14 7 9 7-12"/><circle cx="6" cy="23" r="1.6"/><circle cx="13" cy="9" r="1.6"/><circle cx="20" cy="18" r="1.6"/><path class="sl-control-star" d="M27 2q0 4-4 4 4 0 4 4 0-4 4-4-4 0-4-4Z"/></svg>';
 const rectCenter = r => ({ x: r.left + r.width / 2, y: r.top + r.height / 2, width: r.width, height: r.height });
 const interpolateRect = (a, b, p) => Object.fromEntries(['x', 'y', 'width', 'height'].map(k => [k, mix(a[k], b[k], p)]));
 const authorName = c => c?.author ? '@' + c.author.replace(/^@/, '') : 'A voice in this sky';
@@ -34,7 +37,7 @@ export class SongExperience {
       <p class="sl-witness-author" aria-hidden="true"></p>
       <div class="sl-room">
         <aside class="sl-source" aria-label="Original comment for the lyric"><p class="sl-eyebrow">where this line began</p>
-          <div class="sl-source-byline"><span class="sl-source-dot" aria-hidden="true">✧</span><span class="sl-source-author"></span><span class="sl-source-count"></span></div>
+          <div class="sl-source-byline"><span class="sl-source-dot" aria-hidden="true">${STAR}</span><span class="sl-source-author"></span><span class="sl-source-count"></span></div>
           <blockquote class="sl-source-quote" dir="auto"></blockquote><div class="sl-source-tabs" aria-label="Other source comments for this line"></div>
           <button class="sl-source-open sl-text-button" data-action="source">read the original <span aria-hidden="true">↗</span></button>
           </aside>
@@ -44,9 +47,9 @@ export class SongExperience {
       </div>
       <button class="sl-skip sl-text-button" data-action="skip">skip to the song <span aria-hidden="true">↗</span></button>
       <footer class="sl-footer"><p class="sl-status sl-sr-only" role="status"></p><div class="sl-controls">
-        <button class="sl-text-button" data-action="restart" aria-label="Restart the recording">again</button>
-        <button class="sl-play sl-button" data-action="play" aria-label="Play song">${PLAY}</button>
-        <button class="sl-text-button" data-action="lyrics" aria-label="Browse all lyrics">the lyrics</button></div>
+        <button class="sl-text-button sl-small-control" data-action="restart" aria-label="Restart the recording">${RESTART}<span>again</span></button>
+        <button class="sl-play sl-button" data-action="play" aria-label="Play song"><span class="sl-play-aura" aria-hidden="true"></span>${ORBITS}<span class="sl-play-symbol">${PLAY}</span></button>
+        <button class="sl-text-button sl-small-control" data-action="lyrics" aria-label="Browse all lyrics">${LYRICS}<span>the lyrics</span></button></div>
         <div class="sl-timeline"><output class="sl-time" aria-hidden="true">0:00</output><input class="sl-seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="Song position"><output class="sl-duration" aria-hidden="true">0:00</output></div>
         <p class="sl-error" role="alert" hidden></p></footer>
       <aside class="sl-drawer" hidden aria-labelledby="sl-drawer-title"><div class="sl-drawer-header"><h2 id="sl-drawer-title"></h2><button class="sl-button" data-action="drawer-close" aria-label="Close this panel">×</button></div><div class="sl-drawer-content"></div></aside>
@@ -122,7 +125,8 @@ export class SongExperience {
     const earliest = this.model.phrases.find(p => p.sourceIds.length);
     const preferred = (earliest?.sourceIds || []).map(id => this.nodes.get(id)).filter(Boolean);
     this.hero = preferred.find(n => n.comment.text.length <= 240) || preferred[0] || sources.find(n => n.comment.text.length <= 240) || sources[0];
-    this.bridge.prepare(renderer, sources, this.hero?.comment.id);
+    this.openingSourceId = this.hero?.comment.id; this.courier.lastPosition=null;
+    this.bridge.prepare(renderer, sources, this.openingSourceId);
     this.onOpen?.();
     this.orientDuration = this.savedWasHome ? .28 : 1.1;
     if (!this.savedWasHome) rig.flyTo({ x: 0, y: 0, z: rig.homeZ }, { duration: this.orientDuration, arc: false });
@@ -199,15 +203,15 @@ export class SongExperience {
     const changing = this.current !== index && this.current >= 0 && !intro && !this.gathering;
     this.phraseAnchor = this.courier.lastPosition ? {...this.courier.lastPosition} : null;
     this.phraseLeadTime = this.recording.currentTime || 0;
-    this.el('.sl-lyric-stage').querySelectorAll('.sl-outgoing').forEach(el=>el.remove());
-    lyric.getAnimations().forEach(a=>a.cancel());
+    this.lyricTransition?.old.remove(); this.lyricTransition=null;
+    lyric.style.opacity='1'; lyric.style.transform='none';
     if(changing && !this.reduced() && !this.seeking) {
-      const duration=Math.min(360,Math.max(0,(phrase.records[0].word.start-this.recording.currentTime)*1000-16));
-      const old = lyric.cloneNode(true); old.removeAttribute('id'); old.removeAttribute('aria-label'); old.setAttribute('aria-hidden','true'); old.classList.add('sl-outgoing');
+      const old=lyric.cloneNode(true);old.removeAttribute('id');old.removeAttribute('aria-label');
+      old.setAttribute('aria-hidden','true');old.classList.add('sl-outgoing');
       old.querySelectorAll('[data-key]').forEach(el=>el.removeAttribute('data-key'));
-      old.style.width=lyric.getBoundingClientRect().width+'px'; lyric.before(old);
-      old.animate([{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-10px)'}],{duration,easing:'ease-out'}).finished.then(()=>old.remove()).catch(()=>old.remove());
-      lyric.animate([{opacity:.15,transform:`translateY(${Math.min(10,duration/30)}px)`},{opacity:1,transform:'translateY(0)'}],{duration,easing:'cubic-bezier(.16,1,.3,1)'});
+      old.style.width=lyric.getBoundingClientRect().width+'px';lyric.before(old);
+      const available=Math.max(.08,phrase.records[0].word.start-this.recording.currentTime-.02);
+      this.lyricTransition={old,start:this.recording.currentTime,duration:Math.min(.5,available)};
     }
     this.current = index; lyric.replaceChildren(); this.wordEls = new Map();
     this.beats = lyricBeats(phrase.records);
@@ -227,8 +231,8 @@ export class SongExperience {
     this.el('#sl-lyric').setAttribute('aria-label', phrase.text);
     this.el('.sl-next-line').textContent = this.model.phrases[index + 1]?.text || '';
     this.el('.sl-live').textContent = phrase.text;
-    this.sourceId = null;
-    this.renderSource(preferredId || phrase.sourceIds[0], intro);
+    const source=phraseSource(this.model.phrases,index,this.openingSourceId);
+    this.renderSource(preferredId || source.id, intro || source.opening);
     const fragment = document.createDocumentFragment();
     phrase.sourceIds.forEach((id, i) => { const button = document.createElement('button'); button.type = 'button'; button.textContent = String(i + 1).padStart(2, '0'); button.setAttribute('aria-label', `Read source comment ${i + 1} from ${authorName(this.model.comments.get(id))}`); button.dataset.sourceId = id; button.setAttribute('aria-pressed', String(id === this.sourceId)); button.addEventListener('click', () => { this.recording.pause(); this.renderSource(id); }); fragment.append(button); });
     this.el('.sl-source-tabs').replaceChildren(fragment); this.el('.sl-source-tabs').hidden = phrase.sourceIds.length <= 1;
@@ -236,6 +240,7 @@ export class SongExperience {
   }
   renderSource(id, intro = false) {
     const phrase = this.model.phrases[this.current], quote = this.el('.sl-source-quote'), comment = this.model.comments.get(id);
+    const changed=this.sourceId && this.sourceId!==id;
     this.sourceId = id || null; quote.replaceChildren(); quote.scrollTop = 0; quote.style.fontSize = ''; quote.style.height = ''; quote.classList.remove('sl-source-layout');
     this.el('.sl-source').style.visibility = comment || intro ? '' : 'hidden';
     this.el('.sl-source-author').textContent = comment ? authorName(comment) : '';
@@ -258,6 +263,7 @@ export class SongExperience {
       for (const line of node.lines) { const at = comment.text.indexOf(line, offset); const span = document.createElement('span'); span.className = 'sl-source-line'; appendSpans(span, line, Math.max(0, at)); quote.append(span); offset = Math.max(0, at) + line.length; }
     } else appendSpans(quote, comment.text);
     quote.setAttribute('aria-label', comment.text);
+    if(changed&&!this.reduced()&&!this.seeking){quote.getAnimations().forEach(a=>a.cancel());quote.animate([{opacity:.4,transform:'translateY(4px)'},{opacity:1,transform:'none'}],{duration:300,easing:'cubic-bezier(.2,.7,.2,1)'});}
     for (const button of this.el('.sl-source-tabs').children) button.setAttribute('aria-pressed', String(button.dataset.sourceId === id));
     this.layoutDirty = true;
   }
@@ -278,7 +284,7 @@ export class SongExperience {
       this.rects.set(key, { x:r.left + r.width / 2, y:top - 8, width:r.width, height:r.height, row });
     }
     rows.sort((a,b) => a.top - b.top);
-    rows.forEach((row,i) => { row.ceiling = i ? rows[i-1].bottom + 11 : row.top - 65; row.edge = Math.max(...rows.map(r=>r.right)); });
+    rows.forEach((row,i) => { row.ceiling = i ? rows[i-1].bottom + 11 : row.top - 65; row.edge = Math.max(...rows.map(r=>r.right)); row.edgeLeft=Math.min(...rows.map(r=>r.left)); });
     this.sourceRects = [];
     for (const span of this.el('.sl-source-quote').querySelectorAll('[data-start]')) {
       const r = span.getBoundingClientRect(); this.sourceRects.push({ start: Number(span.dataset.start), end: Number(span.dataset.end), rect: rectCenter(r) });
@@ -315,12 +321,25 @@ export class SongExperience {
     const sounding = cue?.phase === 'flight' && cue.previous ? cue.previous : cue?.record;
     if (sounding?.origin && sounding.origin.commentId !== this.sourceId && (!this.recording.paused || force)) this.renderSource(sounding.origin.commentId);
     if (force) this.layoutDirty = true;
+    this.paintLyrics(time);
     this.syncTransport();
+  }
+  paintLyrics(time) {
+    const transition=this.lyricTransition;if(!transition)return;
+    const p=this.reduced()||this.recording.paused?1:clamp((time-transition.start)/transition.duration);
+    const ease=1-Math.pow(1-p,3),lyric=this.el('#sl-lyric');
+    transition.old.style.opacity=String(1-smooth(clamp(p*1.3)));
+    transition.old.style.transform=`translateY(${-16*ease}px)`;
+    lyric.style.opacity=String(smooth(clamp((p-.12)/.88)));
+    lyric.style.transform=`translateY(${14*(1-ease)}px)`;
+    if(p>=1){transition.old.remove();lyric.style.opacity='1';lyric.style.transform='none';this.lyricTransition=null;}
   }
   paintCourier() {
     if (!this.el('.sl-drawer').hidden || this.gathering || this.returning) { this.courier.hide(); return; }
     const time = this.recording.currentTime || 0, phrase = this.model.phrases[this.current];
-    const cue = bounceCue((this.beats || []).filter(r=>this.rects.has(r.key)), time, this.phraseLeadTime);
+    const cue = bounceCue((this.beats || []).filter(r=>this.rects.has(r.key)), time, this.phraseLeadTime, (previous,next)=>{
+      const to=this.rects.get(next.key),from=this.rects.get(previous?.key)||this.phraseAnchor||to;return hopDuration(from,to);
+    });
     if (!cue) { this.courier.idle(time, this.reduced()); return; }
     const to = this.rects.get(cue.record.key);
     const from = (cue.previous && this.rects.get(cue.previous.key)) || this.phraseAnchor || to;
@@ -340,7 +359,7 @@ export class SongExperience {
     this.syncTransport();
   }
   toggle() { if (this.gathering || this.returning) return; if (this.recording.paused) this.play(); else { this.recording.pause(); this.status('Paused. Stay a little.'); } }
-  seek(time) { if (!this.active || this.gathering || this.returning) return; this.seeking=true; this.recording.currentTime = clamp(time, 0, this.duration()); this.courier.hide(); this.update(true); this.seeking=false; }
+  seek(time) { if (!this.active || this.gathering || this.returning) return; this.seeking=true; this.phraseAnchor=null; this.courier.lastPosition=null; this.recording.currentTime = clamp(time, 0, this.duration()); this.courier.hide(); this.update(true); this.seeking=false; }
   mute() { this.userMuted = !this.userMuted; if (!this.gathering) this.recording.muted = this.userMuted; this.syncMute(); }
   syncMute() { const button = this.el('.sl-mute'); button.setAttribute('aria-pressed', String(this.userMuted)); button.setAttribute('aria-label', this.userMuted ? 'Unmute song' : 'Mute song'); button.querySelector('span').textContent = this.userMuted ? 'sound off' : 'sound on'; }
   syncTransport() {
