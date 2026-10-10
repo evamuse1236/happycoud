@@ -72,5 +72,5 @@ Drive the app with the `verify-happycoud` skill (`.claude/skills/verify-happycou
 
 - The reader keeps the exact text in `#reader-quote .memory-original` and draws an `aria-hidden` line-broken copy beside it, so `#reader-quote`'s full `textContent` holds the text twice.
 - Python checks in `tools/*.py` read `CHROMIUM_PATH` (default: Linux Chrome if present, else Playwright's Chromium) and `HAPPYCOUD_URL` via `tools/browser_env.py`. Most need the real archive. `tools/browser-checks.py` drives the cinematic build, which omits `src/starlight/` modules, so it times out today. `tests/shader_checks.py` is Linux-only (libEGL).
-- Headless Chromium on Windows renders the sky with WebGL2; `?renderer=canvas` forces the Canvas2D path.
+- Headless Chromium falls back to SwiftShader, which renders the desktop sky at ~3 fps, so camera flights stall and taps time out. `npm run smoke` launches with `--enable-gpu --use-angle=d3d11` on Windows (`SMOKE_GPU=0` turns it off). `?renderer=canvas` forces the Canvas2D path.
 - Every spawned process uses `windowsHide` and a timeout; stop only PIDs you started.
