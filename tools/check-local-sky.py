@@ -1,15 +1,16 @@
 """Local Vite integration: real archive, pointer/touch two-step reading and context."""
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from browser_env import chromium_path, base_url
 import json
 out=Path('test-results/local-sky');out.mkdir(parents=True,exist_ok=True)
 results=[]
 with sync_playwright() as p:
-    browser=p.chromium.launch(executable_path='/usr/bin/google-chrome-stable',headless=True,args=['--no-sandbox'])
+    browser=p.chromium.launch(executable_path=chromium_path(),headless=True,args=['--no-sandbox'])
     for width,height,touch in [(1440,900,False),(390,844,True)]:
         context=browser.new_context(viewport={'width':width,'height':height},has_touch=touch,is_mobile=touch,reduced_motion='reduce')
         page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-        page.goto('http://127.0.0.1:4317/?debug&renderer=canvas')
+        page.goto(base_url()+'?debug&renderer=canvas')
         page.wait_for_function('window.__sky?.snapshot().ready')
         assert page.evaluate('''()=>__sky.snapshot().nodes.every(n=>{const c=__sky.original(n.id),owner=r=>r.isOwner||r.is_account_owner||['khushi.o_o','khushi.0_0','khusi.0_0'].includes((r.author||'').trim().replace(/^@/,'').toLowerCase());return !owner(c)&&c.conversation.every(r=>!owner(r))})''')
         snap=page.evaluate('__sky.snapshot()');assert snap['count']==346 and not snap['sample']
@@ -47,7 +48,7 @@ with sync_playwright() as p:
         context.close()
     # WebGL shader/rendering smoke with a small explicit sample, independent of software raster speed.
     context=browser.new_context(viewport={'width':1000,'height':700},reduced_motion='reduce')
-    page=context.new_page();page.goto('http://127.0.0.1:4317/?debug');page.wait_for_function('window.__sky?.snapshot().ready')
+    page=context.new_page();page.goto(base_url()+'?debug');page.wait_for_function('window.__sky?.snapshot().ready')
     page.locator('#enter-silent').click();page.wait_for_timeout(1000)
     s=page.evaluate('__sky.snapshot()');results.append({'graphics':s['renderer'],'gl_error':s['error'],'fallback':s['graphicsFallbackReason']})
     assert s['renderer']=='webgl2' and s['error']==0

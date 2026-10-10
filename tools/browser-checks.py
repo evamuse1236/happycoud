@@ -6,11 +6,12 @@ This deliberately tests a labelled fixture, not the private comment archive.
 """
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from browser_env import chromium_path, base_url
 import argparse, json, subprocess, time, sys
 
 ROOT=Path(__file__).resolve().parent.parent
 parser=argparse.ArgumentParser()
-parser.add_argument('--chromium', default='/usr/bin/google-chrome-stable')
+parser.add_argument('--chromium', default=chromium_path())
 parser.add_argument('--canvas', action='store_true', help='Exercise the Canvas fallback')
 parser.add_argument('--output', default=str(ROOT/'test-results/cinematic'))
 args=parser.parse_args()

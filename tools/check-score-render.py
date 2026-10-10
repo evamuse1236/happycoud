@@ -1,11 +1,12 @@
 """Render each additive voice through the actual audio engine and check samples."""
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from browser_env import chromium_path, base_url
 import json
 out=Path('test-results/mood-score');out.mkdir(parents=True,exist_ok=True)
 with sync_playwright() as p:
-    b=p.chromium.launch(executable_path='/usr/bin/google-chrome-stable',headless=True,args=['--no-sandbox']);page=b.new_page()
-    page.goto('http://127.0.0.1:4317/')
+    b=p.chromium.launch(executable_path=chromium_path(),headless=True,args=['--no-sandbox']);page=b.new_page()
+    page.goto(base_url())
     result=page.evaluate('''async()=>{
       const {ObservatorySound,PROGRESSION}=await import('/src/sound.js');const results=[];
       for(const mood of ['all','love','laugh','poetry']){

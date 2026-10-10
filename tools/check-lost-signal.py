@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from browser_env import chromium_path, base_url
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'test-results/lost-signal/final'
@@ -23,7 +24,7 @@ def seek(page, time):
     page.wait_for_timeout(100)
 
 def enter(page, reduced=False):
-    page.goto(os.environ.get('HAPPYCOUD_URL', 'http://127.0.0.1:4317/') + '?debug' + ('&renderer=canvas' if reduced else ''))
+    page.goto(base_url() + '?debug' + ('&renderer=canvas' if reduced else ''))
     page.wait_for_function('window.__sky?.snapshot().ready')
     page.click('#enter-silent')
     page.evaluate('__sky.finish()')
@@ -31,7 +32,7 @@ def enter(page, reduced=False):
 
 try:
     with sync_playwright() as p:
-        browser = p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH', '/usr/bin/google-chrome-stable'), headless=True, args=['--no-sandbox'])
+        browser = p.chromium.launch(executable_path=chromium_path(), headless=True, args=['--no-sandbox'])
         page = browser.new_page(viewport={'width':1440,'height':900})
         page.on('pageerror', lambda e: errors.append(str(e)))
         enter(page)

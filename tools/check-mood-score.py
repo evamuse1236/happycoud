@@ -1,13 +1,14 @@
 """Exercise the live feeling menu and its sustained instrument parts."""
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from browser_env import chromium_path, base_url
 import json
 out=Path('test-results/mood-score');out.mkdir(parents=True,exist_ok=True)
 with sync_playwright() as p:
-    browser=p.chromium.launch(executable_path='/usr/bin/google-chrome-stable',headless=True,args=['--no-sandbox'])
+    browser=p.chromium.launch(executable_path=chromium_path(),headless=True,args=['--no-sandbox'])
     context=browser.new_context(viewport={'width':1440,'height':900},reduced_motion='reduce')
     page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-    page.goto('http://127.0.0.1:4317/?debug&renderer=canvas');page.wait_for_function('window.__sky?.snapshot().ready')
+    page.goto(base_url()+'?debug&renderer=canvas');page.wait_for_function('window.__sky?.snapshot().ready')
     page.locator('#enter-silent').click();page.wait_for_timeout(900)
     original=page.evaluate('__sky.snapshot().fingerprint')
     def choose(mood):

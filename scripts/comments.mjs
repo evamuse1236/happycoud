@@ -127,20 +127,21 @@ export function fromReviewedArchive(archive) {
   return result;
 }
 
-export async function collectComments() {
+/** Read the archive at `dir` (default: the adjacent real archive). Never writes to it. */
+export async function collectComments(dir = sourceDir) {
   let reviewed=null;
   try {
-    reviewed=fromReviewedArchive(JSON.parse(await fs.readFile(path.join(sourceDir, 'khushi-comments-filtered.json'), 'utf8')));
+    reviewed=fromReviewedArchive(JSON.parse(await fs.readFile(path.join(dir, 'khushi-comments-filtered.json'), 'utf8')));
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
   }
   let files=[];
-  try { files=(await fs.readdir(sourceDir)).filter(f=>/^post-\d+\.json$/.test(f)).sort(); } catch {}
+  try { files=(await fs.readdir(dir)).filter(f=>/^post-\d+\.json$/.test(f)).sort(); } catch {}
   const all=new Map();
   let postsRead=0;
   for(const file of files) {
     try {
-      const record=JSON.parse(await fs.readFile(path.join(sourceDir,file),'utf8'));
+      const record=JSON.parse(await fs.readFile(path.join(dir,file),'utf8'));
       if(!record.snapshot) continue;
       const parsed=parseSnapshot(record);
       for(const c of parsed) all.set(c.id,c);
@@ -160,7 +161,7 @@ export async function collectComments() {
     return {...c,conversation};
   });
   let postTotal=71;
-  try { postTotal=JSON.parse(await fs.readFile(path.join(sourceDir,'post-inventory.json'),'utf8')).length; } catch {}
+  try { postTotal=JSON.parse(await fs.readFile(path.join(dir,'post-inventory.json'),'utf8')).length; } catch {}
   const result={account:owner,postsRead,postTotal,comments,
     counts:{received:comments.length,raw:all.size,owner:[...all.values()].filter(c=>isOwnerComment(c,owner)).length,filtered:all.size-comments.length-[...all.values()].filter(c=>isOwnerComment(c,owner)).length},
     coverage:reviewed?.coverage,source:'reviewed-and-expanded',
@@ -169,9 +170,27 @@ export async function collectComments() {
   return result;
 }
 
+/**
+ * Write public/data/comments.json from the archive. When the archive is missing, an existing snapshot that
+ * still holds comments is kept as it is: a sync on a machine without the archive must not wipe the real data.
+ */
+export async function syncComments({archiveDir = sourceDir, outFile = path.join(root, 'public/data/comments.json'), log = console} = {}) {
+  const archiveMissing = await fs.stat(archiveDir).then(() => false, () => true);
+  if (archiveMissing) {
+    const kept = await fs.readFile(outFile, 'utf8').then(text => JSON.parse(text).comments?.length || 0, () => 0);
+    if (kept > 0) {
+      log.warn(`SKIPPED real-archive sync: ${archiveDir} is missing. Kept the existing ${outFile} (${kept} comments); it was not overwritten.`);
+      return {action: 'kept', comments: kept};
+    }
+    log.warn(`SKIPPED real-archive sync: ${archiveDir} is missing and there is no earlier snapshot. Writing an EMPTY comments.json; the built app will show the import screen and the labelled sample sky, not Khushi's comments.`);
+  }
+  const result = await collectComments(archiveDir);
+  await fs.mkdir(path.dirname(outFile), {recursive: true});
+  await fs.writeFile(outFile, JSON.stringify(result, null, 2));
+  log.log(`${result.comments.length} comments from ${result.postsRead}/${result.postTotal} posts saved.`);
+  return {action: archiveMissing ? 'empty' : 'synced', comments: result.comments.length};
+}
+
 if (process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
-  const result=await collectComments();
-  await fs.mkdir(path.join(root,'public/data'),{recursive:true});
-  await fs.writeFile(path.join(root,'public/data/comments.json'),JSON.stringify(result,null,2));
-  console.log(`${result.comments.length} comments from ${result.postsRead}/${result.postTotal} posts saved.`);
+  await syncComments();
 }
