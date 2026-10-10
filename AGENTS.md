@@ -24,7 +24,7 @@ Drive the app with the `verify-happycoud` skill (`.claude/skills/verify-happycou
 - Generated private output stays local and uncommitted: `public/data/`, `public/media/`, `song-work/`, `dist/`, `dist-standalone/` (all in `.gitignore`).
 - `npm run build:standalone` embeds the real comments and the song into one HTML file. Run it only into a temp folder you delete afterwards.
 - Publishing is the owner's call: `.openai/hosting.json` deploys `dist/`, so leave deploys to the owner.
-- `npm run build` runs `sync` first. With the archive missing, sync prints `SKIPPED real-archive sync` and writes an **empty** `public/data/comments.json`, replacing any earlier real snapshot. `npm run verify` skips the sync instead and builds into a temp folder. This overwrite is an open owner decision, see Known failures and follow-ups.
+- `npm run build` runs `sync` first. With the archive missing, sync prints `SKIPPED real-archive sync` and **keeps** an existing `public/data/comments.json` that holds comments; only when there is no earlier snapshot does it write an empty one. `npm run verify` skips the sync and builds into a temp folder.
 
 ## Project map
 
@@ -55,6 +55,7 @@ Drive the app with the `verify-happycoud` skill (`.claude/skills/verify-happycou
 |---|---|
 | Owner comments never reach collected or shipped data, conversation context included | test `collected comments and their conversations exclude every owner handle` (tests/privacy.test.mjs); verify step `build output privacy scan` (tools/check-build-output.mjs); test `owner comments and duplicate IDs do not enter the constellation` |
 | Sample skies never carry an owner handle and stay labelled `sample` | test `sample skies never carry the account owner's handles` |
+| A sync without the archive never empties an existing real snapshot (owner decision 2026-10-11: keep it) | `syncComments` in `scripts/comments.mjs`; tests/sync.test.mjs |
 | Collecting never modifies the source archive | test `collecting an archive never modifies the source files` |
 | No transcription endpoint or credential reaches the browser | verify step `build output privacy scan`; test `the build scan reports owner comments, transcription endpoints and keys` |
 | The build scan finds owner comments in html, js, source maps, ndjson, txt and .gz, under author-like keys, with zero-width characters stripped; it never prints a matched secret | tests `the build scan catches an owner comment: ...`, `the build scan never prints the secret it found: ...`, `after a LEAK line the scan never claims there are no owner comments` (tests/privacy.test.mjs) |
@@ -79,7 +80,6 @@ Drive the app with the `verify-happycoud` skill (`.claude/skills/verify-happycou
 
 ## Known failures and follow-ups
 
-- **Open owner decision: `npm run build` can replace a real `public/data/comments.json` with an empty one.** If the archive folder is missing, `scripts/comments.mjs` prints `SKIPPED real-archive sync`, writes an empty snapshot over any earlier real one, and exits 0. `npm run build` then produces a deployable empty site. Not fixed here on purpose; the owner decides whether sync should refuse instead. Until then, do not run `npm run build` without the archive, and use `npm run verify`, which skips the sync.
 - `npm run build:standalone` output (comments embedded in HTML) is never scanned by `verify`. Scan it by hand with `node tools/check-build-output.mjs <folder>` before sharing.
 - An owner reply with no author field cannot be recognised by handle, so the scan cannot catch it.
 - Unlabelled 32-hex Azure keys are not recognised by the key patterns.

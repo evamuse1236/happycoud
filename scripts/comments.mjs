@@ -170,11 +170,27 @@ export async function collectComments(dir = sourceDir) {
   return result;
 }
 
+/**
+ * Write public/data/comments.json from the archive. When the archive is missing, an existing snapshot that
+ * still holds comments is kept as it is: a sync on a machine without the archive must not wipe the real data.
+ */
+export async function syncComments({archiveDir = sourceDir, outFile = path.join(root, 'public/data/comments.json'), log = console} = {}) {
+  const archiveMissing = await fs.stat(archiveDir).then(() => false, () => true);
+  if (archiveMissing) {
+    const kept = await fs.readFile(outFile, 'utf8').then(text => JSON.parse(text).comments?.length || 0, () => 0);
+    if (kept > 0) {
+      log.warn(`SKIPPED real-archive sync: ${archiveDir} is missing. Kept the existing ${outFile} (${kept} comments); it was not overwritten.`);
+      return {action: 'kept', comments: kept};
+    }
+    log.warn(`SKIPPED real-archive sync: ${archiveDir} is missing and there is no earlier snapshot. Writing an EMPTY comments.json; the built app will show the import screen and the labelled sample sky, not Khushi's comments.`);
+  }
+  const result = await collectComments(archiveDir);
+  await fs.mkdir(path.dirname(outFile), {recursive: true});
+  await fs.writeFile(outFile, JSON.stringify(result, null, 2));
+  log.log(`${result.comments.length} comments from ${result.postsRead}/${result.postTotal} posts saved.`);
+  return {action: archiveMissing ? 'empty' : 'synced', comments: result.comments.length};
+}
+
 if (process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
-  const archiveMissing=await fs.stat(sourceDir).then(()=>false,()=>true);
-  if (archiveMissing) console.warn(`SKIPPED real-archive sync: ${sourceDir} is missing. Writing an EMPTY public/data/comments.json; the built app will show the import screen and the labelled sample sky, not Khushi's comments.`);
-  const result=await collectComments();
-  await fs.mkdir(path.join(root,'public/data'),{recursive:true});
-  await fs.writeFile(path.join(root,'public/data/comments.json'),JSON.stringify(result,null,2));
-  console.log(`${result.comments.length} comments from ${result.postsRead}/${result.postTotal} posts saved.`);
+  await syncComments();
 }
