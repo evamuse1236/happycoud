@@ -1,7 +1,13 @@
 import { defineConfig } from 'vite';
 import { collectComments } from './scripts/comments.mjs';
 
+// PORT pins the port (strict). Without it Vite starts at 4317 and moves to the next free port.
+const port = Number(process.env.PORT) || 4317;
+const listen = { host: '127.0.0.1', port, strictPort: Boolean(process.env.PORT) };
+
 export default defineConfig({
+  server: listen,
+  preview: listen,
   optimizeDeps: { entries: ['index.html'] },
   plugins:[{
     name:'live-local-comments',
