@@ -127,20 +127,21 @@ export function fromReviewedArchive(archive) {
   return result;
 }
 
-export async function collectComments() {
+/** Read the archive at `dir` (default: the adjacent real archive). Never writes to it. */
+export async function collectComments(dir = sourceDir) {
   let reviewed=null;
   try {
-    reviewed=fromReviewedArchive(JSON.parse(await fs.readFile(path.join(sourceDir, 'khushi-comments-filtered.json'), 'utf8')));
+    reviewed=fromReviewedArchive(JSON.parse(await fs.readFile(path.join(dir, 'khushi-comments-filtered.json'), 'utf8')));
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
   }
   let files=[];
-  try { files=(await fs.readdir(sourceDir)).filter(f=>/^post-\d+\.json$/.test(f)).sort(); } catch {}
+  try { files=(await fs.readdir(dir)).filter(f=>/^post-\d+\.json$/.test(f)).sort(); } catch {}
   const all=new Map();
   let postsRead=0;
   for(const file of files) {
     try {
-      const record=JSON.parse(await fs.readFile(path.join(sourceDir,file),'utf8'));
+      const record=JSON.parse(await fs.readFile(path.join(dir,file),'utf8'));
       if(!record.snapshot) continue;
       const parsed=parseSnapshot(record);
       for(const c of parsed) all.set(c.id,c);
@@ -160,7 +161,7 @@ export async function collectComments() {
     return {...c,conversation};
   });
   let postTotal=71;
-  try { postTotal=JSON.parse(await fs.readFile(path.join(sourceDir,'post-inventory.json'),'utf8')).length; } catch {}
+  try { postTotal=JSON.parse(await fs.readFile(path.join(dir,'post-inventory.json'),'utf8')).length; } catch {}
   const result={account:owner,postsRead,postTotal,comments,
     counts:{received:comments.length,raw:all.size,owner:[...all.values()].filter(c=>isOwnerComment(c,owner)).length,filtered:all.size-comments.length-[...all.values()].filter(c=>isOwnerComment(c,owner)).length},
     coverage:reviewed?.coverage,source:'reviewed-and-expanded',
@@ -170,6 +171,8 @@ export async function collectComments() {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
+  const archiveMissing=await fs.stat(sourceDir).then(()=>false,()=>true);
+  if (archiveMissing) console.warn(`SKIPPED real-archive sync: ${sourceDir} is missing. Writing an EMPTY public/data/comments.json; the built app will show the import screen and the labelled sample sky, not Khushi's comments.`);
   const result=await collectComments();
   await fs.mkdir(path.join(root,'public/data'),{recursive:true});
   await fs.writeFile(path.join(root,'public/data/comments.json'),JSON.stringify(result,null,2));
