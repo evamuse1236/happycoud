@@ -28,7 +28,7 @@ async function startServer() {
   const port = Number(process.env.PORT) || await freePort();
   assertAllowedPort(port);
   const child = spawn(process.execPath, [path.join(root, 'node_modules/vite/bin/vite.js')], {
-    cwd: root, env: { ...process.env, PORT: String(port) }, windowsHide: true, timeout: 600_000, stdio: ['ignore', 'pipe', 'pipe'],
+    cwd: root, env: { ...process.env, PORT: String(port) }, windowsHide: true, timeout: 600_000, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32',
   });
   let log = '';
   child.stdout.on('data', d => { log += d; });
