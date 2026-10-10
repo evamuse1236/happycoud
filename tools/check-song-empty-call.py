@@ -1,11 +1,12 @@
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from browser_env import chromium_path, base_url
 out=Path(__file__).resolve().parents[1]/'test-results/lost-signal/empty-call';out.mkdir(parents=True,exist_ok=True)
 with sync_playwright() as p:
- b=p.chromium.launch(executable_path='/usr/bin/google-chrome-stable',headless=True,args=['--no-sandbox'])
+ b=p.chromium.launch(executable_path=chromium_path(),headless=True,args=['--no-sandbox'])
  for w,h in [(1440,900),(390,844)]:
   page=b.new_page(viewport={'width':w,'height':h});errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-  page.goto('http://127.0.0.1:4317/?debug');page.wait_for_function('window.__sky?.snapshot().ready');page.click('#enter-silent');page.evaluate('__sky.finish()');page.click('#sl-portal')
+  page.goto(base_url()+'?debug');page.wait_for_function('window.__sky?.snapshot().ready');page.click('#enter-silent');page.evaluate('__sky.finish()');page.click('#sl-portal')
   page.evaluate('''()=>{window.sequence=[];function track(){const s=__sky.snapshot().song;sequence.push({at:performance.now(),phase:s.phase,time:s.time,lyric:Number(document.querySelector('#ls-lyric').style.opacity),source:Number(document.querySelector('.ls-source').style.opacity),old:!!document.querySelector('.ls-outgoing')});if(s.active&&s.time<.8)requestAnimationFrame(track);}track();}''')
   page.wait_for_function('__sky.snapshot().song.phase==="quiet"',timeout=25000)
   blank=page.evaluate('''()=>Object.fromEntries(['#ls-lyric','.ls-source','.ls-witness','.ls-recognition','.ls-next','.ls-signal-state','.ls-footer','.ls-skip'].map(s=>[s,Number(getComputedStyle(document.querySelector(s)).opacity)]))''')

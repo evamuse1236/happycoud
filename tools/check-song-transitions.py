@@ -2,12 +2,13 @@
 import json
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from browser_env import chromium_path, base_url
 out=Path(__file__).resolve().parents[1]/'test-results/lost-signal/wrap-opening';out.mkdir(parents=True,exist_ok=True)
 with sync_playwright() as p:
- b=p.chromium.launch(executable_path='/usr/bin/google-chrome-stable',headless=True,args=['--no-sandbox'])
+ b=p.chromium.launch(executable_path=chromium_path(),headless=True,args=['--no-sandbox'])
  page=b.new_page(viewport={'width':1440,'height':900});errs=[];page.on('pageerror',lambda e:errs.append(str(e)))
  page.add_init_script('const AudioClass=window.Audio;window.Audio=function(...args){const a=new AudioClass(...args);window.recording=a;return a;}')
- page.goto('http://127.0.0.1:4317/?debug');page.wait_for_function('window.__sky?.snapshot().ready');page.click('#enter-silent');page.evaluate('__sky.finish()');page.click('#sl-portal')
+ page.goto(base_url()+'?debug');page.wait_for_function('window.__sky?.snapshot().ready');page.click('#enter-silent');page.evaluate('__sky.finish()');page.click('#sl-portal')
  page.evaluate('''()=>{function hold(){if(__sky.snapshot().song.connected&&recording.currentTime>=.25){recording.pause();window.held=true;}else requestAnimationFrame(hold);}requestAnimationFrame(hold);}''')
  page.wait_for_function('window.held',timeout=30000)
  state=page.evaluate('''()=>({time:recording.currentTime,old:Number(document.querySelector('.ls-outgoing')?.style.opacity),incoming:Number(document.querySelector('#ls-lyric').style.opacity),source:Number(document.querySelector('.ls-source').style.opacity)})''')

@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from browser_env import chromium_path, base_url
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'test-results/lost-signal/restoration';OUT.mkdir(parents=True,exist_ok=True)
 checks=[];errors=[]
@@ -27,9 +28,9 @@ window.radioLevel=()=>{const a=radioMeters.at(-1);if(!a)return 0;const d=new Flo
 '''
 try:
  with sync_playwright() as p:
-  b=p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH','/usr/bin/google-chrome-stable'),headless=True,args=['--no-sandbox'])
+  b=p.chromium.launch(executable_path=chromium_path(),headless=True,args=['--no-sandbox'])
   page=b.new_page(viewport={'width':1440,'height':900});page.add_init_script(INIT);page.on('pageerror',lambda e:errors.append(str(e)))
-  page.goto('http://127.0.0.1:4317/?debug');page.wait_for_function('window.__sky?.snapshot().ready');page.click('#enter-silent');page.evaluate('__sky.finish()');page.click('#sl-portal');page.wait_for_timeout(1500)
+  page.goto(base_url()+'?debug');page.wait_for_function('window.__sky?.snapshot().ready');page.click('#enter-silent');page.evaluate('__sky.finish()');page.click('#sl-portal');page.wait_for_timeout(1500)
   check('Radio generates an audible signal after the user opens it',page.evaluate('radioLevel()>0.0001&&__sky.snapshot().song.radioActive'))
   check('Radio remains broken while the words gather',page.locator('.ls-receiver .ls-carrier-line').evaluate('e=>(e.getAttribute("d").match(/M/g)||[]).length===2'))
   page.screenshot(path=str(OUT/'radio-connecting.png'))

@@ -1,8 +1,11 @@
 """Compile the actual exported production shaders on Mesa EGL/OpenGL ES 3.
-Requires Linux libEGL, Node, Python stdlib. This is NOT a browser WebGL test.
+Linux-only: requires Mesa libEGL, Node, Python stdlib. This is NOT a browser WebGL test.
 """
 from pathlib import Path
-import ctypes as C, os, subprocess, json
+import ctypes as C, os, subprocess, json, sys
+if not sys.platform.startswith('linux'):
+    print('SKIPPED tests/shader_checks.py: Linux-only (needs Mesa libEGL.so.1). Not part of npm test or npm run verify.')
+    sys.exit(0)
 os.environ.setdefault('EGL_PLATFORM','surfaceless')
 root=Path(__file__).resolve().parents[1]
 e=C.CDLL('libEGL.so.1');I=C.c_int;U=C.c_uint;P=C.c_void_p

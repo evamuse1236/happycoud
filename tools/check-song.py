@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from playwright.sync_api import Browser, Page, sync_playwright
+from browser_env import chromium_path, base_url
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -24,8 +25,8 @@ DEFAULT_OUT = ROOT / "test-results/song/checks"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--url", default="http://127.0.0.1:4317/")
-parser.add_argument("--chromium", default="/usr/bin/google-chrome-stable")
+parser.add_argument("--url", default=base_url())
+parser.add_argument("--chromium", default=chromium_path())
 parser.add_argument("--output", default=str(DEFAULT_OUT))
 args = parser.parse_args()
 
