@@ -5,11 +5,13 @@ export const MOODS = [
   { id: 'laugh', label: 'Make me laugh', symbol: '☺', bit: 2 },
   { id: 'poetry', label: 'A little poetry', symbol: '☾', bit: 4 }
 ];
+/** Khushi's own handles. Her comments never appear on a reading surface. */
+export const OWNER_HANDLES = Object.freeze(['khushi.o_o', 'khushi.0_0', 'khusi.0_0']);
 export function isOwnerComment(comment, account = 'khushi.o_o') {
   const username = value => String(value || '').trim().replace(/^@/, '').toLowerCase();
   const name = username(comment.author);
   return comment.isOwner === true || comment.is_account_owner === true ||
-    [username(account), 'khushi.o_o', 'khushi.0_0', 'khusi.0_0'].filter(Boolean).includes(name);
+    [username(account), ...OWNER_HANDLES].filter(Boolean).includes(name);
 }
 export const moodMask = moods => (moods.includes('love') ? 1 : 0) | (moods.includes('laugh') ? 2 : 0) | (moods.includes('poetry') ? 4 : 0);
 /** Same reviewed-archive adapter as the audited repository. Original records survive. */

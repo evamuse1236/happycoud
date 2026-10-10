@@ -9,7 +9,8 @@ import path from 'node:path';
 import { collectComments } from '../scripts/comments.mjs';
 import { sampleData as appSample } from '../src/demo.js';
 import { sampleData as fixtureSample } from './fixtures/sample-data.mjs';
-import { scanBuildOutput, OWNER_HANDLES } from '../tools/check-build-output.mjs';
+import { OWNER_HANDLES } from '../src/data.js';
+import { scanBuildOutput } from '../tools/check-build-output.mjs';
 
 const tempDir = () => mkdtemp(path.join(os.tmpdir(), 'happycoud-test-'));
 const ownerPattern = new RegExp(OWNER_HANDLES.map(h => h.replace(/\./g, '\\.')).join('|'), 'i');

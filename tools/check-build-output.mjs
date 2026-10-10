@@ -5,8 +5,8 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { OWNER_HANDLES } from '../src/data.js';
 
-export const OWNER_HANDLES = ['khushi.o_o', 'khushi.0_0', 'khusi.0_0'];
 export const SECRET_PATTERNS = [
   [/cognitiveservices\.azure\.com|services\.ai\.azure\.com|\.openai\.azure\.com|api\.cognitive\.microsoft\.com|speech\.microsoft\.com/i, 'Azure AI / speech endpoint'],
   [/speechtotext\/|\/transcriptions?[:/?]/i, 'transcription API path'],
