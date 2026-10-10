@@ -6,12 +6,13 @@
 //      PORT           port for the server this script starts (default: a free port)
 //      SMOKE_OUT      folder for screenshots + smoke-report.json (default test-results/smoke)
 //      CHROMIUM_PATH  browser to use (default: Playwright's Chromium, installed by `npm run setup`)
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { stopTree, assertAllowedPort } from './proc.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const out = path.resolve(root, process.env.SMOKE_OUT || 'test-results/smoke');
@@ -23,14 +24,11 @@ const VIEWPORTS = [
 const freePort = () => new Promise((resolve, reject) => {
   const s = net.createServer().once('error', reject).listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => resolve(port)); });
 });
-const stopTree = pid => process.platform === 'win32'
-  ? spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], { windowsHide: true, timeout: 15_000, stdio: 'ignore' })
-  : process.kill(pid, 'SIGTERM');
-
 async function startServer() {
   const port = Number(process.env.PORT) || await freePort();
+  assertAllowedPort(port);
   const child = spawn(process.execPath, [path.join(root, 'node_modules/vite/bin/vite.js')], {
-    cwd: root, env: { ...process.env, PORT: String(port) }, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
+    cwd: root, env: { ...process.env, PORT: String(port) }, windowsHide: true, timeout: 600_000, stdio: ['ignore', 'pipe', 'pipe'],
   });
   let log = '';
   child.stdout.on('data', d => { log += d; });
@@ -89,8 +87,11 @@ const report = { url: null, startedServer: false, viewports: [], reducedMotion: 
 let server = null, browser = null;
 try {
   await mkdir(out, { recursive: true });
-  if (process.env.HAPPYCOUD_URL) report.url = process.env.HAPPYCOUD_URL.replace(/\/?$/, '/');
-  else { server = await startServer(); report.url = server.url; report.startedServer = true; report.serverPid = server.pid; }
+  if (process.env.HAPPYCOUD_URL) { report.url = process.env.HAPPYCOUD_URL.replace(/\/?$/, '/'); assertAllowedPort(new URL(report.url).port); }
+  else {
+    server = await startServer(); report.url = server.url; report.startedServer = true; report.serverPid = server.pid;
+    for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => { stopTree(server.pid); process.exit(1); });
+  }
   // Headless Chromium defaults to SwiftShader, which renders the 1440x900 sky at ~3 fps and stalls camera flights.
   // On Windows use the real GPU through D3D11 (~60 fps measured); SMOKE_GPU=0 forces software rendering.
   const gpuArgs = process.platform === 'win32' && process.env.SMOKE_GPU !== '0' ? ['--enable-gpu', '--use-angle=d3d11'] : [];

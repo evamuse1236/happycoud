@@ -1,4 +1,4 @@
-"""Shared browser and URL settings for the Python Playwright checks in tools/.
+r"""Shared browser and URL settings for the Python Playwright checks in tools/.
 
 CHROMIUM_PATH   browser executable. Default: /usr/bin/google-chrome-stable when it exists,
                 otherwise Playwright's own Chromium (on Windows: %LOCALAPPDATA%\ms-playwright).

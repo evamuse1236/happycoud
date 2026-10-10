@@ -9,7 +9,7 @@ The comments are private. Everything in this file serves that rule first.
 | Task | Command | Notes |
 |---|---|---|
 | Install | `npm run setup` | `npm ci` + Playwright Chromium (`playwright` 1.63.0, reuses `%LOCALAPPDATA%\ms-playwright\chromium-1243`). No env file or secrets needed. |
-| Run | `npm run dev` | `PORT=<n>` pins the port (strict). Without it Vite starts at 4317 and moves to the next free port; read the URL from the log. Never use 8765. |
+| Run | `npm run dev` | `PORT=<n>` pins the port (strict). Without it Vite starts at 4317 and moves to the next free port; read the URL from the log. Port 8765 is refused. |
 | Test | `npm test` | node:test, minus the known failures below. `npm run test:all` runs everything. |
 | Verify | `npm run verify` | The gate before saying done: tests, archive sync (or a loud SKIPPED line), `vite build` into a temp folder, build-output privacy scan, smoke drive. |
 | Smoke only | `npm run smoke` | Starts its own Vite on a free port, or uses `HAPPYCOUD_URL`. Screenshots in `test-results/smoke/`. |
@@ -59,6 +59,9 @@ Drive the app with the `verify-happycoud` skill (`.claude/skills/verify-happycou
 | Reduced motion shows the finished sky on entry | `npm run smoke` reduced-motion step; test `reduced motion completes both the arrival and mood transitions immediately` |
 | Original wording, line breaks and emoji are preserved | test `normalization preserves exact original whitespace, Unicode, and source input`; smoke checks the reader text equals the original |
 | Emoji-only reactions and filler stay out; short real compliments stay in | test `generic reactions are excluded while specific jokes survive` |
+| `npm run verify` never leaves a build in `dist/` (the deploy folder) | `tools/verify.mjs` builds into an OS temp folder and deletes it |
+| Port 8765 (the owner's own servers) is never bound | `vite.config.js` and `assertAllowedPort` in `tools/proc.mjs` throw on it |
+| Child processes run hidden, with a deadline that stops their whole tree | `runHidden` / `stopTree` in `tools/proc.mjs` (used by verify, run-tests, smoke) |
 | Private outputs are never committed | `.gitignore` |
 | Never publish or deploy; never commit `song-work/`, `public/data/`, `public/media/`, `dist*/` | written only |
 | Word timings come from the provider; never divide a phrase evenly | written only (docs/song.md) |
@@ -73,4 +76,4 @@ Drive the app with the `verify-happycoud` skill (`.claude/skills/verify-happycou
 - The reader keeps the exact text in `#reader-quote .memory-original` and draws an `aria-hidden` line-broken copy beside it, so `#reader-quote`'s full `textContent` holds the text twice.
 - Python checks in `tools/*.py` read `CHROMIUM_PATH` (default: Linux Chrome if present, else Playwright's Chromium) and `HAPPYCOUD_URL` via `tools/browser_env.py`. Most need the real archive. `tools/browser-checks.py` drives the cinematic build, which omits `src/starlight/` modules, so it times out today. `tests/shader_checks.py` is Linux-only (libEGL).
 - Headless Chromium falls back to SwiftShader, which renders the desktop sky at ~3 fps, so camera flights stall and taps time out. `npm run smoke` launches with `--enable-gpu --use-angle=d3d11` on Windows (`SMOKE_GPU=0` turns it off). `?renderer=canvas` forces the Canvas2D path.
-- Every spawned process uses `windowsHide` and a timeout; stop only PIDs you started.
+- Spawn child processes through `tools/proc.mjs` and stop only PIDs you started; other agents run Vite on this machine at the same time.

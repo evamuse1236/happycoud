@@ -1,6 +1,6 @@
 // npm test: the node:test suite minus the known failures listed by exact name in tests/known-failures.json.
 // npm run test:all (--all): every test, known failures included.
-import { spawn } from 'node:child_process';
+import { runHidden } from './proc.mjs';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
@@ -19,9 +19,6 @@ for (const t of known) {
 const escape = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const skips = all ? [] : known.flatMap(t => ['--test-skip-pattern', `^${escape(t.name)}$`]);
 
-const child = spawn(process.execPath, ['--test', '--test-reporter=spec', ...skips, ...TEST_FILES], {
-  cwd: root, windowsHide: true, timeout: 300_000, stdio: ['ignore', 'inherit', 'inherit'],
-});
-const code = await new Promise(resolve => child.on('close', (c, signal) => resolve(signal ? 1 : c ?? 1)));
-if (code !== 0) process.exit(code);
+const code = await runHidden(['--test', '--test-reporter=spec', ...skips, ...TEST_FILES], { cwd: root, timeout: 300_000 });
+if (code !== 0) { if (typeof code === 'string') console.error(`run-tests: ${code}`); process.exit(typeof code === 'number' ? code : 1); }
 if (!all) console.log(`run-tests: ${known.length} known failures excluded by name (tests/known-failures.json). Run \`npm run test:all\` to see them.`);

@@ -2,7 +2,7 @@
 // 1. npm test  2. sync the real archive (SKIPPED loudly when it is missing)  3. vite build into a temp folder
 // 4. scan that build for owner comments, transcription endpoints and credentials, then delete it  5. smoke drive.
 // The build goes to a temp folder, never dist/, so verify cannot leave private comments where .openai/hosting.json deploys from.
-import { spawn } from 'node:child_process';
+import { runHidden } from './proc.mjs';
 import { mkdtemp, rm, stat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -10,11 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { sourceDir } from '../scripts/comments.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
-const run = (label, args, timeout) => new Promise(resolve => {
-  console.log(`\n== verify: ${label}`);
-  const child = spawn(process.execPath, args, { cwd: root, windowsHide: true, timeout, stdio: 'inherit' });
-  child.on('close', (code, signal) => resolve(signal ? `killed (${signal}, timeout ${timeout / 1000}s)` : code));
-});
+const run = (label, args, timeout) => { console.log(`\n== verify: ${label}`); return runHidden(args, { cwd: root, timeout }); };
 const results = [];
 const step = async (label, args, timeout) => { const code = await run(label, args, timeout); results.push([label, code]); return code === 0; };
 
